@@ -1,4 +1,4 @@
-# Historias de Usuario - DERCAS La Esperanza
+# Historias de Usuario - La Esperanza
 
 Este documento contiene las historias de usuario del Sistema de Gestion y Comercializacion Agricola "La Esperanza", organizadas por modulo.
 
