@@ -1,5 +1,6 @@
 // ──────────────────────────────────────────────────────────────────────────────
 // API de acuerdos de compra — orquesta el flujo DA-03.
+// Crea y administra acuerdos entre comprador y productor, guarda los datos, actualiza estados y envía notificaciones según lo que ocurra.
 // ──────────────────────────────────────────────────────────────────────────────
 
 import type { Acuerdo, EstadoAcuerdo, ItemCarrito, TipoEntrega, Usuario } from '../types';
