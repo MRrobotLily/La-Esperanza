@@ -30,3 +30,7 @@ Permite al comité revisar usuarios y controlar información general del sistema
 
 ### Componente de interfaz
 Se encarga de la navegación y visualización responsive de la aplicación.
+
+## Observaciones
+
+La arquitectura actual del sistema permite futuras integraciones con backend y base de datos sin modificar completamente la estructura principal del frontend.
