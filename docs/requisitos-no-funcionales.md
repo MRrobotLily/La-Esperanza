@@ -23,3 +23,6 @@ La estructura del sistema debe permitir agregar nuevas funcionalidades en futura
 
 ## RNF-08 Claridad de mensajes
 Los mensajes mostrados por el sistema deben ser claros y fáciles de entender para el usuario.
+
+## Observación
+Estos requisitos ayudan a que el sistema sea más fácil de usar, mantener y mejorar en futuras versiones.
