@@ -79,7 +79,7 @@ npm run test:coverage
 npm run test:watch
 ```
 
-## 📚 Documentación de pruebas
+## Documentación de pruebas
 
 - `tests/CASOS_DE_PRUEBA.md` - casos de prueba definidos para los flujos principales.
 - `tests/ESTRATEGIA_PRUEBAS.md` - estrategia de pruebas, tipos y criterios.
