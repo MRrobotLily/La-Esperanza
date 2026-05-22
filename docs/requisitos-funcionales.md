@@ -23,3 +23,6 @@ El productor puede editar, actualizar o eliminar productos publicados dentro del
 
 ## RF-08 Panel del comité
 El comité puede revisar información general del sistema y administrar usuarios o contenido.
+
+## Observación
+Estos requisitos representan las funciones principales consideradas para el primer release del sistema.
