@@ -49,3 +49,6 @@ http://localhost:5173/
 Al abrir esa dirección en el navegador, se puede visualizar la aplicación y probar las funciones principales del sistema.
 
 Esta ejecución local permite detectar errores y revisar cambios antes de subirlos al repositorio.
+
+## Nota
+Antes de subir cambios al repositorio, se recomienda ejecutar el proyecto localmente para verificar que funcione correctamente.
