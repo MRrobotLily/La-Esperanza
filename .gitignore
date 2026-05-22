@@ -1,3 +1,4 @@
+# Archivos y carpetas ignoradas por Git para evitar subir dependencias, archivos generados, configuraciones locales y datos sensibles al repositorio
 node_modules
 dist
 .env
