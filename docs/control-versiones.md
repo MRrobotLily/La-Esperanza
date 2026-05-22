@@ -1,4 +1,4 @@
-# Control de Versiones - DERCAS La Esperanza
+# Control de Versiones - La Esperanza
 
 ## Estrategia de Branching: Gitflow
 
