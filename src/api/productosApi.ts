@@ -1,5 +1,5 @@
 // ──────────────────────────────────────────────────────────────────────────────
-// API de productos — CRUD con filtros, reflejando DA-02.
+// API de productos — CRUD con filtros, reflejando DA-02. Vista
 // ──────────────────────────────────────────────────────────────────────────────
 
 import type { Categoria, Producto, Usuario } from '../types';

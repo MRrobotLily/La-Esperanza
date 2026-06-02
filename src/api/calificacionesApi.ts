@@ -1,6 +1,6 @@
 // ──────────────────────────────────────────────────────────────────────────────
 // API de calificaciones — 1 a 5 estrellas + reseña por acuerdo finalizado.
-// Bidireccional: el comprador califica al productor y viceversa.
+// Bidireccional: el comprador califica al productor y viceversa. Puntuaciones
 // ──────────────────────────────────────────────────────────────────────────────
 
 import type { Calificacion, DireccionCalificacion } from '../types';
