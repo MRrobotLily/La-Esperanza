@@ -1,6 +1,5 @@
 import type { CodigoSMS, Rol, Usuario } from '../types';
 import { nowIso, uid, writeSesionLocal, readSesionLocal, removeSesionLocal } from './storage';
-import { crearNotificacion } from './notificacionesApi';
 
 const BACKEND_URL = 'http://localhost:3001/api';
 
@@ -10,9 +9,22 @@ export function getUltimoCodigoSimulado(): { telefono: string; codigo: string } 
   return ultimoCodigoEmitido;
 }
 
+// Formatear teléfono: "55123456" → "5512-3456"
+function formatTelefono(telefono: string): string {
+  if (telefono.length === 8 && /^\d{8}$/.test(telefono)) {
+    return telefono.slice(0, 4) + '-' + telefono.slice(4);
+  }
+  if (telefono.includes(' ')) {
+    return telefono.replace(' ', '-');
+  }
+  return telefono;
+}
+
 // SMS
 export async function enviarCodigoSMS(telefono: string): Promise<{ codigo: string }> {
-  console.log(`📱 SMS para ${telefono}: 123456`);
+  const tel = formatTelefono(telefono);
+  console.log(`📱 SMS para ${tel}: 123456`);
+  ultimoCodigoEmitido = { telefono: tel, codigo: '123456' };
   return { codigo: '123456' };
 }
 
@@ -30,12 +42,13 @@ export async function iniciarSesionConTelefono(
   codigoIngresado: string
 ): Promise<{ usuario: Usuario | null; error?: string }> {
   try {
-    console.log('🔐 Login con:', telefono);
+    const telFormato = formatTelefono(telefono);
+    console.log('🔐 Login con:', telFormato);
 
     const response = await fetch(`${BACKEND_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ telefono })
+      body: JSON.stringify({ telefono: telFormato })
     });
 
     if (!response.ok) {
@@ -79,10 +92,12 @@ export async function registrarUsuario(
   dpi: string
 ): Promise<{ usuario: Usuario | null; error?: string }> {
   try {
+    const telFormato = formatTelefono(telefono);
+
     const response = await fetch(`${BACKEND_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ telefono, nombre, apellido, rol, dpi })
+      body: JSON.stringify({ telefono: telFormato, nombre, apellido, rol, dpi })
     });
 
     if (!response.ok) {

@@ -42,7 +42,7 @@ export default function Login() {
                 placeholder="1234 5678"
                 value={state.telefono}
                 onChange={(e) => handler.setTelefono(e.target.value)}
-                maxLength={8}
+                maxLength={9}
                 className="flex-1 rounded-xl border border-line bg-bg-alt px-4 py-3 text-lg tracking-[3px] outline-none focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary-light/30"
               />
             </div>

@@ -22,71 +22,112 @@ export function useLogin() {
   const location = useLocation();
   const redirect = new URLSearchParams(location.search).get('redirect') || '/';
 
-  const telefonoFull = `+502${telefono}`;
+  // Convertir "55123456" o "5512 3456" a "5512-3456"
+  const formatTelefono = (tel: string): string => {
+    // Si tiene espacio, convertir a guión
+    if (tel.includes(' ')) {
+      return tel.replace(' ', '-');
+    }
+    // Si tiene 8 dígitos sin separador, agregar guión automáticamente
+    if (tel.length === 8 && /^\d{8}$/.test(tel)) {
+      return tel.slice(0, 4) + '-' + tel.slice(4);
+    }
+    return tel;
+  };
 
   const enviar = useMutation({
-    mutationFn: () => enviarCodigoSMS(telefonoFull),
+    mutationFn: async (telefonoToSend: string) => {
+      const tel = formatTelefono(telefonoToSend);
+      console.log('📱 Enviando SMS a:', tel);
+      return enviarCodigoSMS(tel);
+    },
     onSuccess: ({ codigo }) => {
       setCodigoDemo(codigo);
       setPaso('codigo');
-      toast.success('Código enviado por SMS');
+      toast.success(`Código: ${codigo}`);
     },
-    onError: () => toast.error('No se pudo enviar el código.'),
+    onError: () => toast.error('Error al enviar código'),
   });
 
   const verificar = useMutation({
-    mutationFn: async () => {
-      const r = await verificarCodigoSMS(telefonoFull, codigo);
-      if (!r.ok) {
-        if (r.motivo === 'bloqueado') {
-          const hasta = r.bloqueadoHasta ? new Date(r.bloqueadoHasta) : null;
-          throw new Error(
-            hasta
-              ? `Demasiados intentos. Intenta de nuevo a las ${hasta.toLocaleTimeString()}.`
-              : 'Demasiados intentos. Espera unos minutos.',
-          );
-        }
-        if (r.motivo === 'expirado') throw new Error('El código expiró. Solicita uno nuevo.');
-        throw new Error(
-          r.restantes !== undefined
-            ? `Código incorrecto. Te quedan ${r.restantes} intento(s).`
-            : 'Código incorrecto.',
-        );
+    mutationFn: async (data: { telefono: string; codigo: string }) => {
+      console.log('🔐 Verificando con datos:', data);
+      
+      const { valido, error } = await verificarCodigoSMS(data.telefono, data.codigo);
+      
+      if (!valido) {
+        throw new Error(error || 'Código incorrecto');
       }
-      const usuario = await iniciarSesionConTelefono(telefonoFull);
-      return usuario;
+
+      console.log('✅ Código válido, intentando login con:', data.telefono);
+      const result = await iniciarSesionConTelefono(data.telefono, data.codigo);
+      
+      if (!result.usuario) {
+        throw new Error(result.error || 'Error al iniciar sesión');
+      }
+
+      return result.usuario;
     },
     onSuccess: (usuario) => {
-      if (!usuario) {
-        navigate(`/registro?telefono=${encodeURIComponent(telefonoFull)}`);
-        return;
-      }
+      console.log('✅ Login exitoso:', usuario);
       iniciarSesion(usuario);
-      toast.success(`¡Bienvenido, ${usuario.nombre}!`);
-      navigate(redirect, { replace: true });
+      toast.success(`¡Bienvenido ${usuario.nombre}!`);
+      navigate(redirect);
     },
-    onError: (e: Error) => {
-      setErrorCodigo(e.message);
-      toast.error(e.message);
+    onError: (error) => {
+      const mensaje = error instanceof Error ? error.message : 'Error desconocido';
+      console.error('❌ Error:', mensaje);
+      setErrorCodigo(mensaje);
+      toast.error(mensaje);
     },
   });
 
+  const enviarCodigo = () => {
+    console.log('📱 Teléfono ingresado:', telefono);
+    if (!telefono || telefono.length < 8) {
+      toast.error('Ingresa un número válido');
+      return;
+    }
+    enviar.mutate(telefono);
+  };
+
+  const reenviarCodigo = () => {
+    enviarCodigo();
+  };
+
+  const verificarCodigo = () => {
+    if (!codigo || codigo.length < 6) {
+      toast.error('Ingresa el código completo');
+      return;
+    }
+    const telefonoFormato = formatTelefono(telefono);
+    console.log('📱 Teléfono original:', telefono);
+    console.log('📱 Teléfono formateado:', telefonoFormato);
+    console.log('🔐 Código:', codigo);
+    verificar.mutate({ telefono: telefonoFormato, codigo });
+  };
+
+  const volverPaso = () => {
+    setPaso('telefono');
+    setErrorCodigo(undefined);
+    setCodigo('');
+  };
+
   return {
-    state: { paso, telefono, codigo, codigoDemo, errorCodigo },
+    state: {
+      paso,
+      telefono,
+      codigo,
+      codigoDemo,
+      errorCodigo,
+    },
     handler: {
-      setTelefono: (v: string) => setTelefono(v.replace(/\D/g, '').slice(0, 8)),
-      setCodigo: (v: string) => {
-        setCodigo(v);
-        setErrorCodigo(undefined);
-      },
-      volverPaso: () => {
-        setPaso('telefono');
-        setCodigo('');
-        setErrorCodigo(undefined);
-      },
-      enviarCodigo: () => enviar.mutate(),
-      reenviarCodigo: () => enviar.mutate(),
-      verificar: () => verificar.mutate(),
+      setTelefono,
+      setCodigo,
+      enviarCodigo,
+      reenviarCodigo,
+      verificar: verificarCodigo,
+      volverPaso,
       enviando: enviar.isPending,
       verificando: verificar.isPending,
     },
