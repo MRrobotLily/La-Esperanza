@@ -171,21 +171,71 @@ app.get('/api/carrito/:userId', async (req, res) => {
   }
 });
 
-// POST agregar al carrito
+// POST agregar al carrito (o actualizar si existe)
 app.post('/api/carrito', async (req, res) => {
   const { user_id, producto_id, cantidad } = req.body;
   
   try {
     const connection = await pool.getConnection();
-    const [result] = await connection.query(
-      'INSERT INTO carrito (user_id, producto_id, cantidad) VALUES (?, ?, ?)',
-      [user_id, producto_id, cantidad]
-    );
-    connection.release();
     
-    res.json({ success: true, id: result.insertId });
+    // Verificar si ya existe
+    const [existing] = await connection.query(
+      'SELECT * FROM carrito WHERE user_id = ? AND producto_id = ?',
+      [user_id, producto_id]
+    );
+    
+    if (existing.length > 0) {
+      // Actualizar cantidad
+      await connection.query(
+        'UPDATE carrito SET cantidad = ? WHERE user_id = ? AND producto_id = ?',
+        [cantidad, user_id, producto_id]
+      );
+    } else {
+      // Insertar nuevo
+      await connection.query(
+        'INSERT INTO carrito (user_id, producto_id, cantidad) VALUES (?, ?, ?)',
+        [user_id, producto_id, cantidad]
+      );
+    }
+    
+    connection.release();
+    res.json({ success: true });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// DELETE eliminar item del carrito
+app.delete('/api/carrito/:userId/:productoId', async (req, res) => {
+  const { userId, productoId } = req.params;
+  
+  try {
+    const connection = await pool.getConnection();
+    await connection.query(
+      'DELETE FROM carrito WHERE user_id = ? AND producto_id = ?',
+      [userId, productoId]
+    );
+    connection.release();
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// DELETE vaciar carrito completo
+app.delete('/api/carrito/:userId', async (req, res) => {
+  const { userId } = req.params;
+  
+  try {
+    const connection = await pool.getConnection();
+    await connection.query(
+      'DELETE FROM carrito WHERE user_id = ?',
+      [userId]
+    );
+    connection.release();
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
