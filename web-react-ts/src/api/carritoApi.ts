@@ -1,69 +1,114 @@
-// ──────────────────────────────────────────────────────────────────────────────
-// Carrito persistido por comprador — según DA-03 la lista es pre-selección,
-// no cobro. Se agrupa por productor al momento de enviar al productor.
-// ──────────────────────────────────────────────────────────────────────────────
-
 import type { ItemCarrito, Producto } from '../types';
-import { delay } from './storage';
 import { obtenerProducto } from './productosApi';
 
-const key = (usuarioId: string) => `dercas.carrito.${usuarioId}`;
+const BACKEND_URL = 'http://localhost:3001/api';
 
+// LEER CARRITO desde backend
 export async function leerCarrito(usuarioId: string): Promise<ItemCarrito[]> {
   try {
-    const raw = localStorage.getItem(key(usuarioId));
-    return delay(raw ? (JSON.parse(raw) as ItemCarrito[]) : []);
-  } catch {
-    return delay([]);
+    const response = await fetch(`${BACKEND_URL}/carrito/${usuarioId}`);
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    if (!data.success || !data.data) return [];
+
+    return data.data.map((item: any) => ({
+      productoId: item.producto_id.toString(),
+      cantidad: item.cantidad || 1,
+    }));
+  } catch (error) {
+    console.error('Error leyendo carrito:', error);
+    return [];
   }
 }
 
+// GUARDAR CARRITO (helper)
 export async function guardarCarrito(usuarioId: string, items: ItemCarrito[]): Promise<void> {
-  localStorage.setItem(key(usuarioId), JSON.stringify(items));
-  return delay(undefined, 40);
+  // No usar
 }
 
+// AGREGAR AL CARRITO
 export async function agregarAlCarrito(
   usuarioId: string,
   productoId: string,
   cantidad: number,
 ): Promise<ItemCarrito[]> {
-  const items = await leerCarrito(usuarioId);
-  const existente = items.find((i) => i.productoId === productoId);
-  if (existente) existente.cantidad += cantidad;
-  else items.push({ productoId, cantidad });
-  await guardarCarrito(usuarioId, items);
-  return items;
+  try {
+    console.log('🛒 Agregando:', { usuarioId, productoId, cantidad });
+    
+    await fetch(`${BACKEND_URL}/carrito`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: parseInt(usuarioId),
+        producto_id: parseInt(productoId),
+        cantidad
+      })
+    });
+
+    return leerCarrito(usuarioId);
+  } catch (error) {
+    console.error('Error agregando al carrito:', error);
+    return [];
+  }
 }
 
+// ACTUALIZAR CANTIDAD
 export async function actualizarCantidad(
   usuarioId: string,
   productoId: string,
   cantidad: number,
 ): Promise<ItemCarrito[]> {
-  const items = await leerCarrito(usuarioId);
-  const existente = items.find((i) => i.productoId === productoId);
-  if (!existente) return items;
-  if (cantidad <= 0) return eliminarDelCarrito(usuarioId, productoId);
-  existente.cantidad = cantidad;
-  await guardarCarrito(usuarioId, items);
-  return items;
+  try {
+    if (cantidad <= 0) {
+      return eliminarDelCarrito(usuarioId, productoId);
+    }
+
+    await fetch(`${BACKEND_URL}/carrito`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: parseInt(usuarioId),
+        producto_id: parseInt(productoId),
+        cantidad
+      })
+    });
+
+    return leerCarrito(usuarioId);
+  } catch (error) {
+    console.error('Error actualizando cantidad:', error);
+    return [];
+  }
 }
 
+// ELIMINAR DEL CARRITO
 export async function eliminarDelCarrito(
   usuarioId: string,
   productoId: string,
 ): Promise<ItemCarrito[]> {
-  const items = (await leerCarrito(usuarioId)).filter((i) => i.productoId !== productoId);
-  await guardarCarrito(usuarioId, items);
-  return items;
+  try {
+    await fetch(`${BACKEND_URL}/carrito/${usuarioId}/${productoId}`, {
+      method: 'DELETE'
+    });
+    return leerCarrito(usuarioId);
+  } catch (error) {
+    console.error('Error eliminando del carrito:', error);
+    return [];
+  }
 }
 
+// VACIAR CARRITO
 export async function vaciarCarrito(usuarioId: string): Promise<void> {
-  localStorage.removeItem(key(usuarioId));
-  return delay(undefined, 40);
+  try {
+    await fetch(`${BACKEND_URL}/carrito/${usuarioId}`, {
+      method: 'DELETE'
+    });
+  } catch (error) {
+    console.error('Error vaciando carrito:', error);
+  }
 }
 
+// CARRITO HIDRATADO
 export interface ItemCarritoHidratado extends ItemCarrito {
   producto: Producto;
   precioAplicado: number;
@@ -77,16 +122,39 @@ export async function leerCarritoHidratado(usuarioId: string): Promise<ItemCarri
     items.map(async (i) => {
       const producto = await obtenerProducto(i.productoId);
       if (!producto) return null;
-      const precioAplicado =
-        i.cantidad >= producto.cantidadMayor ? producto.precioMayor : producto.precioUnitario;
+
+      const precioAplicado = i.cantidad >= producto.cantidadMayor 
+        ? producto.precioMayor 
+        : producto.precioUnitario;
+      
+      const subtotal = precioAplicado * i.cantidad;
+      const superaStock = i.cantidad > producto.cantidadDisponible;
+
       return {
         ...i,
         producto,
         precioAplicado,
-        subtotal: precioAplicado * i.cantidad,
-        superaStock: i.cantidad > producto.cantidadDisponible,
-      } as ItemCarritoHidratado;
+        subtotal,
+        superaStock,
+      };
     }),
   );
-  return hidratados.filter((x): x is ItemCarritoHidratado => x !== null);
+
+  return hidratados.filter((i): i is ItemCarritoHidratado => i !== null);
+}
+
+// AGRUPAR POR PRODUCTOR
+export async function agruparPorProductor(usuarioId: string): Promise<Record<string, ItemCarritoHidratado[]>> {
+  const items = await leerCarritoHidratado(usuarioId);
+  const grupos: Record<string, ItemCarritoHidratado[]> = {};
+
+  for (const item of items) {
+    const productorId = item.producto.productorId;
+    if (!grupos[productorId]) {
+      grupos[productorId] = [];
+    }
+    grupos[productorId].push(item);
+  }
+
+  return grupos;
 }

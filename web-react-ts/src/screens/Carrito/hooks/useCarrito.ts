@@ -1,9 +1,3 @@
-// ──────────────────────────────────────────────────────────────────────────────
-// Hook del "carrito" — que en La Esperanza es una LISTA DE COMPRAS.
-// Comportamiento según requerimiento: no hay cobro; el comprador arma una
-// lista y la envía al productor por chat interno, WhatsApp o PDF imprimible.
-// ──────────────────────────────────────────────────────────────────────────────
-
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -17,13 +11,14 @@ import { crearAcuerdo } from '../../../api/acuerdosApi';
 import { enviarMensaje } from '../../../api/mensajesApi';
 import { useAuth } from '../../../providers/AuthProvider/useAuth';
 import type { ItemCarritoHidratado } from '../../../api/carritoApi';
-import { DB_KEYS, read } from '../../../api/storage';
 import type { Usuario } from '../../../types';
 import {
   construirTextoLista,
   imprimirListaCompras,
   type DatosListaPdf,
 } from '../../../utils/listaComprasPdf';
+
+const BACKEND_URL = 'http://localhost:3001/api';
 
 export interface GrupoCarrito {
   productorId: string;
@@ -64,8 +59,6 @@ export function useCarrito() {
   const grupos = agruparPorProductor(items.data ?? []);
   const totalGlobal = (items.data ?? []).reduce((s, i) => s + i.subtotal, 0);
 
-  // Envía al productor (chat interno o WhatsApp). Crea el acuerdo y limpia
-  // los productos de ese productor del carrito.
   const enviarProductor = useMutation({
     mutationFn: async ({
       productorId,
@@ -89,7 +82,6 @@ export function useCarrito() {
         canalContacto: canal,
       });
 
-      // Si es chat interno, enviamos automáticamente el listado como mensaje.
       if (canal === 'chat') {
         const datos = crearDatosPdf(usuario!, g, notas);
         await enviarMensaje({
@@ -100,7 +92,6 @@ export function useCarrito() {
         });
       }
 
-      // Quitamos esos productos del carrito
       for (const it of g.items) {
         await eliminarDelCarrito(usuario!.id, it.producto.id);
       }
@@ -120,7 +111,6 @@ export function useCarrito() {
         const tel = (grupo.productorTelefono ?? '502').replace(/\D/g, '');
         window.open(`https://wa.me/${tel}?text=${texto}`, '_blank');
       } else {
-        // Mandamos al chat para que vea la conversación con el listado ya enviado
         navigate(`/chat/${acuerdo.productorId}?acuerdo=${acuerdo.id}`);
       }
     },
@@ -171,17 +161,15 @@ export function useCarrito() {
 // ─── Helpers ───────────────────────────────────────────────────────
 
 function agruparPorProductor(items: ItemCarritoHidratado[]): GrupoCarrito[] {
-  const usuarios = read<Usuario[]>(DB_KEYS.usuarios, []);
   const map = new Map<string, GrupoCarrito>();
   items.forEach((it) => {
     const pid = it.producto.productorId;
-    const u = usuarios.find((x) => x.id === pid);
     const g =
       map.get(pid) ??
       ({
         productorId: pid,
-        productorNombre: u ? `${u.nombre} ${u.apellido}` : 'Productor',
-        productorTelefono: u?.telefono,
+        productorNombre: `Productor ${pid}`,
+        productorTelefono: undefined,
         items: [],
         subtotal: 0,
       } satisfies GrupoCarrito);

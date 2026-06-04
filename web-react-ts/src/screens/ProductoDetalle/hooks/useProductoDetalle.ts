@@ -37,8 +37,6 @@ export function useProductoDetalle() {
     enabled: !!id,
   });
 
-  // Productos relacionados: primero los del MISMO productor, luego de la
-  // MISMA categoría. Máximo 4, sin incluir el actual.
   const relacionados = useQuery<Producto[]>({
     queryKey: ['producto:relacionados', id, producto.data?.productorId, producto.data?.categoria],
     queryFn: async () => {
@@ -79,6 +77,7 @@ export function useProductoDetalle() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['carrito', usuario?.id] });
+      qc.invalidateQueries({ queryKey: ['carrito:hidratado', usuario?.id] });
       toast.success('Producto agregado a tu lista.');
     },
     onError: (e: Error) => {
