@@ -17,7 +17,7 @@ export default function AuthProvider({ children }: Props) {
   const [cargando, setCargando] = useState(true);
 
   const refrescar = useCallback(async () => {
-    const actual = await obtenerUsuarioActual();
+    const actual = obtenerUsuarioActual();
     setUsuario(actual);
   }, []);
 
@@ -29,7 +29,7 @@ export default function AuthProvider({ children }: Props) {
   }, [refrescar]);
 
   const iniciarSesion = useCallback((u: Usuario) => {
-    guardarSesion(u.id);
+    guardarSesion(u);
     setUsuario(u);
   }, []);
 
