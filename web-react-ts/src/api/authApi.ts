@@ -1,7 +1,7 @@
 import type { CodigoSMS, Rol, Usuario } from '../types';
 import { nowIso, uid, writeSesionLocal, readSesionLocal, removeSesionLocal } from './storage';
 
-const BACKEND_URL = 'http://localhost:3001/api';
+const BACKEND_URL = 'https://la-esperanza-production.up.railway.app/api';
 
 let ultimoCodigoEmitido: { telefono: string; codigo: string } | null = null;
 

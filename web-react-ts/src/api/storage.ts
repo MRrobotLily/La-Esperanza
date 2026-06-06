@@ -3,7 +3,7 @@
 // IMPORTANTE: read() es síncrono (devuelve cache), readAsync() es para cargar
 // ──────────────────────────────────────────────────────────────────────────────
 
-const API_URL = 'http://localhost:3001/api';
+const API_URL = 'https://la-esperanza-production.up.railway.app/api';
 
 export const DB_KEYS = {
   usuarios: 'dercas.usuarios',

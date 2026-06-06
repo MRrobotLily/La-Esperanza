@@ -1,6 +1,6 @@
 import type { Categoria, Producto, Usuario } from '../types';
 
-const BACKEND_URL = 'http://localhost:3001/api';
+const BACKEND_URL = 'https://la-esperanza-production.up.railway.app/api';
 
 function nowIso(): string {
   return new Date().toISOString();

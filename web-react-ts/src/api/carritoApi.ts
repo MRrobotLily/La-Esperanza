@@ -1,7 +1,7 @@
 import type { ItemCarrito, Producto } from '../types';
 import { obtenerProducto } from './productosApi';
 
-const BACKEND_URL = 'http://localhost:3001/api';
+const BACKEND_URL = 'https://la-esperanza-production.up.railway.app/api';
 
 // LEER CARRITO desde backend
 export async function leerCarrito(usuarioId: string): Promise<ItemCarrito[]> {
