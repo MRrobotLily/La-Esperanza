@@ -35,6 +35,9 @@ export async function listarProductos(filtros: FiltrosProductos = {}): Promise<P
         (p.descripcion && p.descripcion.toLowerCase().includes(q))
       );
     }
+    if (filtros.soloActivos !== false) {
+      productos = productos.filter((p: any) => p.activo !== 0 && p.activo !== false);
+    }
 
     return productos.map((p: any) => ({
       id: p.id.toString(),
@@ -49,7 +52,7 @@ export async function listarProductos(filtros: FiltrosProductos = {}): Promise<P
       imagenes: [],
       tiposEntrega: ['recogida'] as const,
       productorId: p.user_id ? p.user_id.toString() : '0',
-      activo: true,
+      activo: p.activo !== 0 && p.activo !== false,
       creadoEn: p.created_at || nowIso(),
       actualizadoEn: p.created_at || nowIso(),
     }));
@@ -82,7 +85,7 @@ export async function obtenerProducto(id: string): Promise<Producto | null> {
       imagenes: [],
       tiposEntrega: ['recogida'] as const,
       productorId: p.user_id ? p.user_id.toString() : '0',
-      activo: true,
+      activo: p.activo !== 0 && p.activo !== false,
       creadoEn: p.created_at || nowIso(),
       actualizadoEn: p.created_at || nowIso(),
     };
@@ -121,7 +124,7 @@ export async function obtenerProductorDeProducto(productoId: string): Promise<Us
   }
 }
 
-// CREAR PRODUCTO - guardar en MySQL
+// CREAR PRODUCTO
 export interface ProductoInput {
   nombre: string;
   categoria: Categoria;
@@ -137,8 +140,6 @@ export interface ProductoInput {
 
 export async function crearProducto(productorId: string, datos: ProductoInput): Promise<Producto> {
   try {
-    console.log('📦 Creando producto:', datos);
-    
     const response = await fetch(`${BACKEND_URL}/productos`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -154,12 +155,10 @@ export async function crearProducto(productorId: string, datos: ProductoInput): 
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('Error backend:', error);
       throw new Error(error.error || 'Error al crear producto');
     }
 
     const data = await response.json();
-    console.log('✅ Producto creado:', data);
 
     return {
       id: data.id.toString(),
@@ -190,9 +189,23 @@ export async function actualizarProducto(
   datos: Partial<ProductoInput>
 ): Promise<Producto | null> {
   try {
-    const producto = await obtenerProducto(productoId);
-    if (!producto) return null;
-    return { ...producto, ...datos, actualizadoEn: nowIso() };
+    const response = await fetch(`${BACKEND_URL}/productos/${productoId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre: datos.nombre,
+        categoria: datos.categoria,
+        precio: datos.precioUnitario,
+        stock: datos.cantidadDisponible,
+        descripcion: datos.descripcion,
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Error al actualizar producto');
+    }
+
+    return obtenerProducto(productoId);
   } catch (error) {
     console.error('Error actualizando producto:', error);
     return null;
@@ -201,12 +214,32 @@ export async function actualizarProducto(
 
 // ELIMINAR PRODUCTO
 export async function eliminarProducto(productoId: string): Promise<boolean> {
-  return false;
+  try {
+    const response = await fetch(`${BACKEND_URL}/productos/${productoId}`, {
+      method: 'DELETE'
+    });
+
+    return response.ok;
+  } catch (error) {
+    console.error('Error eliminando producto:', error);
+    return false;
+  }
 }
 
-// CAMBIAR ESTADO
+// CAMBIAR ESTADO (pausar/activar)
 export async function cambiarEstadoProducto(productoId: string, activo: boolean): Promise<boolean> {
-  return false;
+  try {
+    const response = await fetch(`${BACKEND_URL}/productos/${productoId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ activo })
+    });
+
+    return response.ok;
+  } catch (error) {
+    console.error('Error cambiando estado:', error);
+    return false;
+  }
 }
 
 // DESCONTAR STOCK

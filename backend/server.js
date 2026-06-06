@@ -5,11 +5,9 @@ require('dotenv').config();
 
 const app = express();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Pool de conexiones MySQL
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -21,13 +19,11 @@ const pool = mysql.createPool({
 });
 
 // ==========================================
-// RUTAS DE AUTENTICACIÓN
+// AUTENTICACIÓN
 // ==========================================
 
-// LOGIN
 app.post('/api/auth/login', async (req, res) => {
   const { telefono } = req.body;
-  
   try {
     const connection = await pool.getConnection();
     const [users] = await connection.query(
@@ -35,30 +31,18 @@ app.post('/api/auth/login', async (req, res) => {
       [telefono]
     );
     connection.release();
-    
     if (users.length > 0) {
-      res.json({ 
-        success: true, 
-        user: users[0] 
-      });
+      res.json({ success: true, user: users[0] });
     } else {
-      res.status(401).json({ 
-        success: false, 
-        message: 'Usuario no encontrado' 
-      });
+      res.status(401).json({ success: false, message: 'Usuario no encontrado' });
     }
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// REGISTER
 app.post('/api/auth/register', async (req, res) => {
   const { telefono, nombre, apellido, rol } = req.body;
-  
   try {
     const connection = await pool.getConnection();
     const [result] = await connection.query(
@@ -66,46 +50,34 @@ app.post('/api/auth/register', async (req, res) => {
       [telefono, nombre, apellido, rol || 'comprador']
     );
     connection.release();
-    
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       userId: result.insertId,
-      telefono,
-      nombre,
-      apellido,
+      telefono, nombre, apellido,
       rol: rol || 'comprador'
     });
   } catch (error) {
-    res.status(400).json({ 
-      success: false, 
-      error: error.message 
-    });
+    res.status(400).json({ success: false, error: error.message });
   }
 });
 
 // ==========================================
-// RUTAS DE PRODUCTOS
+// PRODUCTOS
 // ==========================================
 
-// GET todos los productos
 app.get('/api/productos', async (req, res) => {
   try {
     const connection = await pool.getConnection();
-    const [productos] = await connection.query(
-      'SELECT * FROM productos'
-    );
+    const [productos] = await connection.query('SELECT * FROM productos');
     connection.release();
-    
     res.json({ success: true, data: productos });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// GET producto por ID
 app.get('/api/productos/:id', async (req, res) => {
   const { id } = req.params;
-  
   try {
     const connection = await pool.getConnection();
     const [productos] = await connection.query(
@@ -113,7 +85,6 @@ app.get('/api/productos/:id', async (req, res) => {
       [id]
     );
     connection.release();
-    
     if (productos.length > 0) {
       res.json({ success: true, data: productos[0] });
     } else {
@@ -124,10 +95,8 @@ app.get('/api/productos/:id', async (req, res) => {
   }
 });
 
-// POST crear producto
 app.post('/api/productos', async (req, res) => {
   const { nombre, categoria, precio, stock, descripcion, user_id } = req.body;
-  
   try {
     const connection = await pool.getConnection();
     const [result] = await connection.query(
@@ -135,66 +104,30 @@ app.post('/api/productos', async (req, res) => {
       [nombre, categoria, precio, stock, descripcion, user_id]
     );
     connection.release();
-    
-    res.json({ 
-      success: true, 
-      id: result.insertId,
-      message: 'Producto creado'
-    });
+    res.json({ success: true, id: result.insertId });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
   }
 });
 
-// ==========================================
-// RUTAS DE CARRITO
-// ==========================================
-
-// GET carrito del usuario
-app.get('/api/carrito/:userId', async (req, res) => {
-  const { userId } = req.params;
-  
-  try {
-    const connection = await pool.getConnection();
-    const [items] = await connection.query(
-      `SELECT c.*, p.nombre, p.precio 
-       FROM carrito c 
-       JOIN productos p ON c.producto_id = p.id 
-       WHERE c.user_id = ?`,
-      [userId]
-    );
-    connection.release();
-    
-    res.json({ success: true, data: items });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// POST agregar al carrito (o actualizar si existe)
-app.post('/api/carrito', async (req, res) => {
-  const { user_id, producto_id, cantidad } = req.body;
-  
+// PUT actualizar producto (o pausar/activar)
+app.put('/api/productos/:id', async (req, res) => {
+  const { id } = req.params;
+  const { nombre, categoria, precio, stock, descripcion, activo } = req.body;
   try {
     const connection = await pool.getConnection();
     
-    // Verificar si ya existe
-    const [existing] = await connection.query(
-      'SELECT * FROM carrito WHERE user_id = ? AND producto_id = ?',
-      [user_id, producto_id]
-    );
-    
-    if (existing.length > 0) {
-      // Actualizar cantidad
+    // Si solo es para pausar/activar
+    if (activo !== undefined && nombre === undefined) {
       await connection.query(
-        'UPDATE carrito SET cantidad = ? WHERE user_id = ? AND producto_id = ?',
-        [cantidad, user_id, producto_id]
+        'UPDATE productos SET activo = ? WHERE id = ?',
+        [activo, id]
       );
     } else {
-      // Insertar nuevo
+      // Actualización completa
       await connection.query(
-        'INSERT INTO carrito (user_id, producto_id, cantidad) VALUES (?, ?, ?)',
-        [user_id, producto_id, cantidad]
+        'UPDATE productos SET nombre = ?, categoria = ?, precio = ?, stock = ?, descripcion = ? WHERE id = ?',
+        [nombre, categoria, precio, stock, descripcion, id]
       );
     }
     
@@ -205,10 +138,72 @@ app.post('/api/carrito', async (req, res) => {
   }
 });
 
-// DELETE eliminar item del carrito
+// DELETE eliminar producto
+app.delete('/api/productos/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const connection = await pool.getConnection();
+    // Primero eliminar del carrito si existe
+    await connection.query('DELETE FROM carrito WHERE producto_id = ?', [id]);
+    // Luego eliminar el producto
+    await connection.query('DELETE FROM productos WHERE id = ?', [id]);
+    connection.release();
+    res.json({ success: true });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// ==========================================
+// CARRITO
+// ==========================================
+
+app.get('/api/carrito/:userId', async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const connection = await pool.getConnection();
+    const [items] = await connection.query(
+      `SELECT c.*, p.nombre, p.precio 
+       FROM carrito c 
+       JOIN productos p ON c.producto_id = p.id 
+       WHERE c.user_id = ?`,
+      [userId]
+    );
+    connection.release();
+    res.json({ success: true, data: items });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/carrito', async (req, res) => {
+  const { user_id, producto_id, cantidad } = req.body;
+  try {
+    const connection = await pool.getConnection();
+    const [existing] = await connection.query(
+      'SELECT * FROM carrito WHERE user_id = ? AND producto_id = ?',
+      [user_id, producto_id]
+    );
+    if (existing.length > 0) {
+      await connection.query(
+        'UPDATE carrito SET cantidad = ? WHERE user_id = ? AND producto_id = ?',
+        [cantidad, user_id, producto_id]
+      );
+    } else {
+      await connection.query(
+        'INSERT INTO carrito (user_id, producto_id, cantidad) VALUES (?, ?, ?)',
+        [user_id, producto_id, cantidad]
+      );
+    }
+    connection.release();
+    res.json({ success: true });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
 app.delete('/api/carrito/:userId/:productoId', async (req, res) => {
   const { userId, productoId } = req.params;
-  
   try {
     const connection = await pool.getConnection();
     await connection.query(
@@ -222,10 +217,8 @@ app.delete('/api/carrito/:userId/:productoId', async (req, res) => {
   }
 });
 
-// DELETE vaciar carrito completo
 app.delete('/api/carrito/:userId', async (req, res) => {
   const { userId } = req.params;
-  
   try {
     const connection = await pool.getConnection();
     await connection.query(
@@ -240,26 +233,86 @@ app.delete('/api/carrito/:userId', async (req, res) => {
 });
 
 // ==========================================
-// RUTAS DE USUARIOS
+// NOTIFICACIONES
 // ==========================================
 
-// GET todos los usuarios
+app.get('/api/notificaciones/:userId', async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const connection = await pool.getConnection();
+    const [notifs] = await connection.query(
+      'SELECT * FROM notificaciones WHERE user_id = ? ORDER BY created_at DESC',
+      [userId]
+    );
+    connection.release();
+    res.json({ success: true, data: notifs });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/notificaciones', async (req, res) => {
+  const { user_id, tipo, mensaje } = req.body;
+  try {
+    const connection = await pool.getConnection();
+    const [result] = await connection.query(
+      'INSERT INTO notificaciones (user_id, tipo, mensaje) VALUES (?, ?, ?)',
+      [user_id, tipo, mensaje]
+    );
+    connection.release();
+    res.json({ success: true, id: result.insertId });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+app.put('/api/notificaciones/:id/leer', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const connection = await pool.getConnection();
+    await connection.query(
+      'UPDATE notificaciones SET leida = TRUE WHERE id = ?',
+      [id]
+    );
+    connection.release();
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.put('/api/notificaciones/:userId/leer-todas', async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const connection = await pool.getConnection();
+    await connection.query(
+      'UPDATE notificaciones SET leida = TRUE WHERE user_id = ?',
+      [userId]
+    );
+    connection.release();
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ==========================================
+// USUARIOS
+// ==========================================
+
 app.get('/api/users', async (req, res) => {
   try {
     const connection = await pool.getConnection();
     const [users] = await connection.query('SELECT * FROM users');
     connection.release();
-    
     res.json({ success: true, data: users });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// GET usuario por ID
 app.get('/api/users/:id', async (req, res) => {
   const { id } = req.params;
-  
   try {
     const connection = await pool.getConnection();
     const [users] = await connection.query(
@@ -267,7 +320,6 @@ app.get('/api/users/:id', async (req, res) => {
       [id]
     );
     connection.release();
-    
     if (users.length > 0) {
       res.json({ success: true, data: users[0] });
     } else {

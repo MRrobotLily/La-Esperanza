@@ -110,6 +110,48 @@ app.post('/api/productos', async (req, res) => {
   }
 });
 
+// PUT actualizar producto (o pausar/activar)
+app.put('/api/productos/:id', async (req, res) => {
+  const { id } = req.params;
+  const { nombre, categoria, precio, stock, descripcion, activo } = req.body;
+  try {
+    const connection = await pool.getConnection();
+    
+    // Si solo es para pausar/activar
+    if (activo !== undefined && nombre === undefined) {
+      await connection.query(
+        'UPDATE productos SET activo = ? WHERE id = ?',
+        [activo ? 1 : 0, id]
+      );
+    } else {
+      // Actualización completa
+      await connection.query(
+        'UPDATE productos SET nombre = ?, categoria = ?, precio = ?, stock = ?, descripcion = ? WHERE id = ?',
+        [nombre, categoria, precio, stock, descripcion, id]
+      );
+    }
+    
+    connection.release();
+    res.json({ success: true });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// DELETE eliminar producto
+app.delete('/api/productos/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const connection = await pool.getConnection();
+    await connection.query('DELETE FROM carrito WHERE producto_id = ?', [id]);
+    await connection.query('DELETE FROM productos WHERE id = ?', [id]);
+    connection.release();
+    res.json({ success: true });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
 // ==========================================
 // CARRITO
 // ==========================================

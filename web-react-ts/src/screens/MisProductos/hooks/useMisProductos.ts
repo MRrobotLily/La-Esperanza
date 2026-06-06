@@ -26,8 +26,11 @@ export function useMisProductos() {
       cambiarEstadoProducto(id, activo),
     onSuccess: () => {
       toast.success('Estado del producto actualizado.');
-      qc.invalidateQueries({ queryKey: ['mis-productos', usuario?.id] });
+      // Invalidar TODAS las queries de productos
+      qc.invalidateQueries({ queryKey: ['mis-productos'] });
       qc.invalidateQueries({ queryKey: ['productos'] });
+      qc.invalidateQueries({ queryKey: ['productos:resumen'] });
+      qc.refetchQueries({ queryKey: ['mis-productos', usuario?.id] });
     },
   });
 
@@ -35,8 +38,9 @@ export function useMisProductos() {
     mutationFn: (id: string) => eliminarProducto(id),
     onSuccess: () => {
       toast.success('Producto eliminado.');
-      qc.invalidateQueries({ queryKey: ['mis-productos', usuario?.id] });
+      qc.invalidateQueries({ queryKey: ['mis-productos'] });
       qc.invalidateQueries({ queryKey: ['productos'] });
+      qc.refetchQueries({ queryKey: ['mis-productos', usuario?.id] });
     },
   });
 

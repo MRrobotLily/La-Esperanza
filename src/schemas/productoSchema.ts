@@ -1,7 +1,3 @@
-// ──────────────────────────────────────────────────────────────────────────────
-// Schema de producto — valida DA-02 (campos obligatorios + imágenes 1..5).
-// ──────────────────────────────────────────────────────────────────────────────
-
 import { z } from 'zod';
 import type { Categoria, UnidadMedida } from '../types';
 
@@ -29,9 +25,9 @@ export const productoSchema = z
     cantidadDisponible: z.coerce.number().int().nonnegative('La cantidad disponible no puede ser negativa.'),
     unidadMedida: z.enum(UNIDADES as [UnidadMedida, ...UnidadMedida[]]),
     imagenes: z
-      .array(z.string().min(1))
-      .min(1, 'Agrega al menos una imagen del producto.')
-      .max(5, 'Máximo 5 imágenes por producto.'),
+      .array(z.string())
+      .max(5, 'Máximo 5 imágenes por producto.')
+      .default([]),
     tiposEntrega: z
       .array(z.enum(['recoger', 'delivery']))
       .min(1, 'Selecciona al menos un tipo de entrega.'),

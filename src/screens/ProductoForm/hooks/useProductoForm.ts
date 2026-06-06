@@ -43,25 +43,26 @@ export function useProductoForm() {
     enabled: editando,
   });
 
-  useEffect(() => {
+useEffect(() => {
     if (editando && producto.data) {
       form.reset({
         nombre: producto.data.nombre,
         categoria: producto.data.categoria,
         descripcion: producto.data.descripcion,
         precioUnitario: producto.data.precioUnitario,
-        precioMayor: producto.data.precioMayor,
-        cantidadMayor: producto.data.cantidadMayor,
+        precioMayor: producto.data.precioMayor || producto.data.precioUnitario,
+        cantidadMayor: producto.data.cantidadMayor || 10,
         cantidadDisponible: producto.data.cantidadDisponible,
         unidadMedida: producto.data.unidadMedida,
-        imagenes: producto.data.imagenes,
-        tiposEntrega: producto.data.tiposEntrega,
+        imagenes: producto.data.imagenes.length > 0 ? producto.data.imagenes : ['placeholder.jpg'],
+        tiposEntrega: producto.data.tiposEntrega.length > 0 ? producto.data.tiposEntrega : ['recoger'],
       });
     }
   }, [editando, producto.data, form]);
 
   const guardar = useMutation({
     mutationFn: async (datos: ProductoFormInput) => {
+      console.log('💾 Guardando datos:', datos);
       if (!usuario) throw new Error('Sesión inválida.');
       if (editando) return actualizarProducto(id!, datos);
       return crearProducto(usuario.id, datos);
@@ -72,7 +73,10 @@ export function useProductoForm() {
       qc.invalidateQueries({ queryKey: ['productos'] });
       navigate('/mis-productos');
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      console.error('❌ Error al guardar:', e);
+      toast.error(e.message);
+    },
   });
 
   return {
@@ -83,7 +87,15 @@ export function useProductoForm() {
       guardando: guardar.isPending,
     },
     handler: {
-      submit: form.handleSubmit((d) => guardar.mutate(d)),
+      submit: form.handleSubmit(
+        (d) => {
+          console.log('✅ Validación OK, datos:', d);
+          guardar.mutate(d);
+        },
+        (errors) => {
+          console.error('❌ Errores validación:', errors);
+        }
+      ),
     },
   };
 }
