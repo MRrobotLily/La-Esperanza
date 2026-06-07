@@ -143,7 +143,7 @@ export default function ProductoForm() {
           >
             Cancelar
           </Link>
-          <Button type="submit" tamano="lg" cargando={guardando}>
+          <Button type="button" tamano="lg" cargando={guardando} onClick={handler.submit}>
             {editando ? 'Guardar cambios' : '✅ Publicar producto'}
           </Button>
         </div>
