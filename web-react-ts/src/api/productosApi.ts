@@ -6,6 +6,19 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
+function parseImagenes(imgs: any): string[] {
+  if (!imgs) return [];
+  if (Array.isArray(imgs)) return imgs;
+  if (typeof imgs === 'string') {
+    try {
+      return JSON.parse(imgs);
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 export interface FiltrosProductos {
   categoria?: Categoria | 'Todas';
   busqueda?: string;
@@ -13,7 +26,6 @@ export interface FiltrosProductos {
   productorId?: string;
 }
 
-// LISTAR PRODUCTOS desde backend
 export async function listarProductos(filtros: FiltrosProductos = {}): Promise<Producto[]> {
   try {
     const response = await fetch(`${BACKEND_URL}/productos`);
@@ -49,7 +61,7 @@ export async function listarProductos(filtros: FiltrosProductos = {}): Promise<P
       cantidadMayor: parseInt(p.cantidad_mayor) || 10,
       cantidadDisponible: parseInt(p.stock) || 0,
       unidadMedida: (p.unidad_medida || 'kg') as any,
-      imagenes: [],
+      imagenes: parseImagenes(p.imagenes),
       tiposEntrega: ['recoger'] as any,
       productorId: p.user_id ? p.user_id.toString() : '0',
       activo: p.activo !== 0 && p.activo !== false,
@@ -62,7 +74,6 @@ export async function listarProductos(filtros: FiltrosProductos = {}): Promise<P
   }
 }
 
-// OBTENER PRODUCTO por ID
 export async function obtenerProducto(id: string): Promise<Producto | null> {
   try {
     const response = await fetch(`${BACKEND_URL}/productos/${id}`);
@@ -82,7 +93,7 @@ export async function obtenerProducto(id: string): Promise<Producto | null> {
       cantidadMayor: parseInt(p.cantidad_mayor) || 10,
       cantidadDisponible: parseInt(p.stock) || 0,
       unidadMedida: (p.unidad_medida || 'kg') as any,
-      imagenes: [],
+      imagenes: parseImagenes(p.imagenes),
       tiposEntrega: ['recoger'] as any,
       productorId: p.user_id ? p.user_id.toString() : '0',
       activo: p.activo !== 0 && p.activo !== false,
@@ -95,7 +106,6 @@ export async function obtenerProducto(id: string): Promise<Producto | null> {
   }
 }
 
-// OBTENER PRODUCTOR
 export async function obtenerProductorDeProducto(productoId: string): Promise<Usuario | null> {
   try {
     const producto = await obtenerProducto(productoId);
@@ -119,12 +129,10 @@ export async function obtenerProductorDeProducto(productoId: string): Promise<Us
       creadoEn: u.created_at || nowIso(),
     };
   } catch (error) {
-    console.error('Error obteniendo productor:', error);
     return null;
   }
 }
 
-// CREAR PRODUCTO
 export interface ProductoInput {
   nombre: string;
   categoria: Categoria;
@@ -153,6 +161,7 @@ export async function crearProducto(productorId: string, datos: ProductoInput): 
         precio_mayor: datos.precioMayor,
         cantidad_mayor: datos.cantidadMayor,
         unidad_medida: datos.unidadMedida,
+        imagenes: datos.imagenes || [],
       })
     });
 
@@ -186,7 +195,6 @@ export async function crearProducto(productorId: string, datos: ProductoInput): 
   }
 }
 
-// ACTUALIZAR PRODUCTO
 export async function actualizarProducto(
   productoId: string,
   datos: Partial<ProductoInput>
@@ -204,6 +212,7 @@ export async function actualizarProducto(
         precio_mayor: datos.precioMayor,
         cantidad_mayor: datos.cantidadMayor,
         unidad_medida: datos.unidadMedida,
+        imagenes: datos.imagenes || [],
       })
     });
 
@@ -218,21 +227,15 @@ export async function actualizarProducto(
   }
 }
 
-// ELIMINAR PRODUCTO
 export async function eliminarProducto(productoId: string): Promise<boolean> {
   try {
-    const response = await fetch(`${BACKEND_URL}/productos/${productoId}`, {
-      method: 'DELETE'
-    });
-
+    const response = await fetch(`${BACKEND_URL}/productos/${productoId}`, { method: 'DELETE' });
     return response.ok;
   } catch (error) {
-    console.error('Error eliminando producto:', error);
     return false;
   }
 }
 
-// CAMBIAR ESTADO (pausar/activar)
 export async function cambiarEstadoProducto(productoId: string, activo: boolean): Promise<boolean> {
   try {
     const response = await fetch(`${BACKEND_URL}/productos/${productoId}`, {
@@ -240,15 +243,12 @@ export async function cambiarEstadoProducto(productoId: string, activo: boolean)
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ activo })
     });
-
     return response.ok;
   } catch (error) {
-    console.error('Error cambiando estado:', error);
     return false;
   }
 }
 
-// DESCONTAR STOCK
 export async function descontarStock(productoId: string, cantidad: number): Promise<boolean> {
   return true;
 }

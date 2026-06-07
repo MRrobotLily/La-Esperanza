@@ -96,19 +96,13 @@ app.get('/api/productos/:id', async (req, res) => {
 });
 
 app.post('/api/productos', async (req, res) => {
-  const { nombre, categoria, precio, stock, descripcion, user_id, precio_mayor, cantidad_mayor, unidad_medida } = req.body;
+  const { nombre, categoria, precio, stock, descripcion, user_id, precio_mayor, cantidad_mayor, unidad_medida, imagenes } = req.body;
   try {
     const connection = await pool.getConnection();
     const [result] = await connection.query(
-      'INSERT INTO productos (nombre, categoria, precio, stock, descripcion, user_id, precio_mayor, cantidad_mayor, unidad_medida) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [nombre, categoria, precio, stock, descripcion, user_id, precio_mayor || 0, cantidad_mayor || 10, unidad_medida || 'lb']
+      'INSERT INTO productos (nombre, categoria, precio, stock, descripcion, user_id, precio_mayor, cantidad_mayor, unidad_medida, imagenes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [nombre, categoria, precio, stock, descripcion, user_id, precio_mayor || 0, cantidad_mayor || 10, unidad_medida || 'lb', JSON.stringify(imagenes || [])]
     );
-    connection.release();
-    res.json({ success: true, id: result.insertId });
-  } catch (error) {
-    res.status(400).json({ success: false, error: error.message });
-  }
-});
 
 // PUT actualizar producto (o pausar/activar)
 app.put('/api/productos/:id', async (req, res) => {
@@ -126,8 +120,8 @@ app.put('/api/productos/:id', async (req, res) => {
     } else {
       // Actualización completa
       await connection.query(
-        'UPDATE productos SET nombre = ?, categoria = ?, precio = ?, stock = ?, descripcion = ?, precio_mayor = ?, cantidad_mayor = ?, unidad_medida = ? WHERE id = ?',
-        [nombre, categoria, precio, stock, descripcion, req.body.precio_mayor || 0, req.body.cantidad_mayor || 10, req.body.unidad_medida || 'lb', id]
+        'UPDATE productos SET nombre = ?, categoria = ?, precio = ?, stock = ?, descripcion = ?, precio_mayor = ?, cantidad_mayor = ?, unidad_medida = ?, imagenes = ? WHERE id = ?',
+        [nombre, categoria, precio, stock, descripcion, req.body.precio_mayor || 0, req.body.cantidad_mayor || 10, req.body.unidad_medida || 'lb', JSON.stringify(req.body.imagenes || []), id]
       );
     }
     
