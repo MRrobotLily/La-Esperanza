@@ -45,12 +45,12 @@ export async function listarProductos(filtros: FiltrosProductos = {}): Promise<P
       categoria: p.categoria,
       descripcion: p.descripcion || '',
       precioUnitario: parseFloat(p.precio) || 0,
-      precioMayor: parseFloat(p.precio) || 0,
-      cantidadMayor: 10,
+      precioMayor: parseFloat(p.precio_mayor) || parseFloat(p.precio) || 0,
+      cantidadMayor: parseInt(p.cantidad_mayor) || 10,
       cantidadDisponible: parseInt(p.stock) || 0,
-      unidadMedida: 'kg' as const,
+      unidadMedida: (p.unidad_medida || 'kg') as any,
       imagenes: [],
-      tiposEntrega: ['recogida'] as const,
+      tiposEntrega: ['recoger'] as any,
       productorId: p.user_id ? p.user_id.toString() : '0',
       activo: p.activo !== 0 && p.activo !== false,
       creadoEn: p.created_at || nowIso(),
@@ -78,12 +78,12 @@ export async function obtenerProducto(id: string): Promise<Producto | null> {
       categoria: p.categoria,
       descripcion: p.descripcion || '',
       precioUnitario: parseFloat(p.precio) || 0,
-      precioMayor: parseFloat(p.precio) || 0,
-      cantidadMayor: 10,
+      precioMayor: parseFloat(p.precio_mayor) || parseFloat(p.precio) || 0,
+      cantidadMayor: parseInt(p.cantidad_mayor) || 10,
       cantidadDisponible: parseInt(p.stock) || 0,
-      unidadMedida: 'kg' as const,
+      unidadMedida: (p.unidad_medida || 'kg') as any,
       imagenes: [],
-      tiposEntrega: ['recogida'] as const,
+      tiposEntrega: ['recoger'] as any,
       productorId: p.user_id ? p.user_id.toString() : '0',
       activo: p.activo !== 0 && p.activo !== false,
       creadoEn: p.created_at || nowIso(),
@@ -149,7 +149,10 @@ export async function crearProducto(productorId: string, datos: ProductoInput): 
         precio: datos.precioUnitario,
         stock: datos.cantidadDisponible,
         descripcion: datos.descripcion,
-        user_id: parseInt(productorId)
+        user_id: parseInt(productorId),
+        precio_mayor: datos.precioMayor,
+        cantidad_mayor: datos.cantidadMayor,
+        unidad_medida: datos.unidadMedida,
       })
     });
 
@@ -198,6 +201,9 @@ export async function actualizarProducto(
         precio: datos.precioUnitario,
         stock: datos.cantidadDisponible,
         descripcion: datos.descripcion,
+        precio_mayor: datos.precioMayor,
+        cantidad_mayor: datos.cantidadMayor,
+        unidad_medida: datos.unidadMedida,
       })
     });
 

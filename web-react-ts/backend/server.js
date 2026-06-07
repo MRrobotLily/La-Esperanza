@@ -96,12 +96,12 @@ app.get('/api/productos/:id', async (req, res) => {
 });
 
 app.post('/api/productos', async (req, res) => {
-  const { nombre, categoria, precio, stock, descripcion, user_id } = req.body;
+  const { nombre, categoria, precio, stock, descripcion, user_id, precio_mayor, cantidad_mayor, unidad_medida } = req.body;
   try {
     const connection = await pool.getConnection();
     const [result] = await connection.query(
-      'INSERT INTO productos (nombre, categoria, precio, stock, descripcion, user_id) VALUES (?, ?, ?, ?, ?, ?)',
-      [nombre, categoria, precio, stock, descripcion, user_id]
+      'INSERT INTO productos (nombre, categoria, precio, stock, descripcion, user_id, precio_mayor, cantidad_mayor, unidad_medida) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [nombre, categoria, precio, stock, descripcion, user_id, precio_mayor || 0, cantidad_mayor || 10, unidad_medida || 'lb']
     );
     connection.release();
     res.json({ success: true, id: result.insertId });
@@ -126,8 +126,8 @@ app.put('/api/productos/:id', async (req, res) => {
     } else {
       // Actualización completa
       await connection.query(
-        'UPDATE productos SET nombre = ?, categoria = ?, precio = ?, stock = ?, descripcion = ? WHERE id = ?',
-        [nombre, categoria, precio, stock, descripcion, id]
+        'UPDATE productos SET nombre = ?, categoria = ?, precio = ?, stock = ?, descripcion = ?, precio_mayor = ?, cantidad_mayor = ?, unidad_medida = ? WHERE id = ?',
+        [nombre, categoria, precio, stock, descripcion, req.body.precio_mayor || 0, req.body.cantidad_mayor || 10, req.body.unidad_medida || 'lb', id]
       );
     }
     
