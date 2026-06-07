@@ -24,7 +24,7 @@ export const productoSchema = z.object({
   cantidadDisponible: z.coerce.number().int().nonnegative('La cantidad disponible no puede ser negativa.'),
   unidadMedida: z.enum(UNIDADES as [UnidadMedida, ...UnidadMedida[]]),
   imagenes: z.array(z.string()).default([]),
-  tiposEntrega: z.array(z.enum(['recoger', 'delivery'])).default(['recoger']),
+  tiposEntrega: z.array(z.enum(['recoger', 'delivery', 'recogida'])).default(['recoger']),
 });
 
 export type ProductoFormInput = z.infer<typeof productoSchema>;
