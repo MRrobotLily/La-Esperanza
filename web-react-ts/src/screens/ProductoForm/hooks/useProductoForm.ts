@@ -73,9 +73,12 @@ export function useProductoForm() {
     },
     onSuccess: () => {
       toast.success(editando ? 'Producto actualizado.' : 'Producto publicado.');
-      qc.invalidateQueries({ queryKey: ['mis-productos', usuario?.id] });
+      qc.invalidateQueries({ queryKey: ['mis-productos'] });
       qc.invalidateQueries({ queryKey: ['productos'] });
-      navigate('/mis-productos');
+      qc.invalidateQueries({ queryKey: ['producto'] });
+      setTimeout(() => {
+        window.location.href = '/mis-productos';
+      }, 500);
     },
     onError: (e: Error) => {
       console.error('❌ Error al guardar:', e);
