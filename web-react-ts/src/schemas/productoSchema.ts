@@ -25,6 +25,9 @@ export const productoSchema = z.object({
   unidadMedida: z.enum(UNIDADES as [UnidadMedida, ...UnidadMedida[]]),
   imagenes: z.array(z.string()).default([]),
   tiposEntrega: z.array(z.enum(['recoger', 'delivery', 'recogida'])).default(['recoger']),
+}).refine((v) => v.precioMayor <= v.precioUnitario, {
+  path: ['precioMayor'],
+  message: 'El precio por mayor debe ser menor o igual al precio unitario.',
 });
 
 export type ProductoFormInput = z.infer<typeof productoSchema>;

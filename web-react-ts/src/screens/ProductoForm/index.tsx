@@ -65,15 +65,17 @@ export default function ProductoForm() {
           <Input
             label="Precio unitario (Q)"
             type="number"
-            step="0.01"
-            {...form.register('precioUnitario')}
+            step="1"
+            min="0"
+            {...form.register('precioUnitario', { valueAsNumber: true })}
             error={errores.precioUnitario?.message}
           />
           <Input
             label="Precio por mayor (Q)"
             type="number"
-            step="0.01"
-            {...form.register('precioMayor')}
+            step="1"
+            min="0"
+            {...form.register('precioMayor', { valueAsNumber: true })}
             error={errores.precioMayor?.message}
           />
           <Input
