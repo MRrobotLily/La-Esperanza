@@ -7,11 +7,6 @@ interface Props {
   max?: number;
 }
 
-/**
- * Selector múltiple de imágenes del producto (1 a 5).
- * Reutiliza SelectorFoto que ofrece "Tomar foto" o "Subir de galería" y
- * permite seleccionar varios archivos a la vez.
- */
 export default function ImagenesUpload({
   imagenes: imagenesRaw,
   onCambio,
@@ -19,6 +14,8 @@ export default function ImagenesUpload({
   max = 5,
 }: Props) {
   const imagenes = imagenesRaw || [];
+  
+  const agregar = (url: string) => onCambio([...imagenes, url].slice(0, max));
   const agregarVarios = (urls: string[]) =>
     onCambio([...imagenes, ...urls].slice(0, max));
   const quitar = (idx: number) => {
@@ -57,7 +54,6 @@ export default function ImagenesUpload({
           </div>
         ))}
       </div>
-
       {imagenes.length < max && (
         <SelectorFoto
           onFoto={agregar}
@@ -71,7 +67,6 @@ export default function ImagenesUpload({
           variante={imagenes.length === 0 ? 'primary' : 'outline'}
         />
       )}
-
       {error && <p className="text-xs font-medium text-danger">{error}</p>}
     </div>
   );
