@@ -13,12 +13,12 @@ interface Props {
  * permite seleccionar varios archivos a la vez.
  */
 export default function ImagenesUpload({
-  imagenes,
+  imagenes: imagenesRaw,
   onCambio,
   error,
   max = 5,
 }: Props) {
-  const agregar = (url: string) => onCambio([...imagenes, url].slice(0, max));
+  const imagenes = imagenesRaw || [];
   const agregarVarios = (urls: string[]) =>
     onCambio([...imagenes, ...urls].slice(0, max));
   const quitar = (idx: number) => {
