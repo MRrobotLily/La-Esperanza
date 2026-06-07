@@ -13,6 +13,9 @@ export default function ProductoForm() {
   const { state, handler } = useProductoForm();
   const { form, editando, cargando, guardando } = state;
   const errores = form.formState.errors;
+  console.log('🐛 Errores formulario:', errores);
+  console.log('🐛 Valores actuales:', form.watch());
+
 
   if (cargando) return <Screen><Loader /></Screen>;
 
