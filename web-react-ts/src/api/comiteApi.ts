@@ -1,12 +1,8 @@
-// ──────────────────────────────────────────────────────────────────────────────
-// API del comité — refleja el diagrama DA-04.
-// Acciones: advertencia, suspensión temporal, cancelación permanente,
-// observación, reactivación. Todas quedan en el log de auditoría.
-// ──────────────────────────────────────────────────────────────────────────────
-
 import type { RegistroAuditoria, TipoAuditoria, Usuario } from '../types';
 import { DB_KEYS, delay, nowIso, read, uid, write } from './storage';
 import { crearNotificacion } from './notificacionesApi';
+
+const BACKEND_URL = 'https://la-esperanza-production.up.railway.app/api';
 
 function getUsuarios(): Usuario[] {
   return read<Usuario[]>(DB_KEYS.usuarios, []);
@@ -30,8 +26,30 @@ function registrarAuditoria(reg: Omit<RegistroAuditoria, 'id' | 'creadoEn'>): Re
   return nuevo;
 }
 
+// AHORA USA BACKEND
 export async function listarUsuariosParaComite(): Promise<Usuario[]> {
-  return delay(getUsuarios().sort((a, b) => b.actualizadoEn.localeCompare(a.actualizadoEn)));
+  try {
+    const response = await fetch(`${BACKEND_URL}/users`);
+    if (!response.ok) return [];
+    
+    const data = await response.json();
+    if (!data.success || !data.data) return [];
+    
+    return data.data.map((u: any) => ({
+      id: u.id.toString(),
+      telefono: u.telefono,
+      nombre: u.nombre,
+      apellido: u.apellido,
+      rol: u.rol,
+      dpi: '',
+      estado: 'activo' as any,
+      creadoEn: u.created_at || new Date().toISOString(),
+      actualizadoEn: u.created_at || new Date().toISOString(),
+    }));
+  } catch (error) {
+    console.error('Error listando usuarios:', error);
+    return [];
+  }
 }
 
 export async function advertirUsuario(
@@ -40,12 +58,6 @@ export async function advertirUsuario(
   motivo: string,
 ): Promise<void> {
   registrarAuditoria({ comiteId, usuarioAfectadoId: usuarioId, tipo: 'advertencia', motivo });
-  await crearNotificacion({
-    usuarioId,
-    tipo: 'advertencia_comite',
-    titulo: 'Advertencia del comité',
-    mensaje: motivo,
-  });
   return delay(undefined);
 }
 
@@ -84,12 +96,6 @@ export async function suspenderUsuario(
     motivo,
     duracionDias,
   });
-  await crearNotificacion({
-    usuarioId,
-    tipo: 'suspension_cuenta',
-    titulo: 'Tu cuenta fue suspendida',
-    mensaje: `Motivo: ${motivo}. Duración: ${duracionDias} días.`,
-  });
   return delay(data[idx]);
 }
 
@@ -115,12 +121,6 @@ export async function cancelarUsuario(
     tipo: 'cancelacion_permanente',
     motivo,
   });
-  await crearNotificacion({
-    usuarioId,
-    tipo: 'cancelacion_cuenta',
-    titulo: 'Tu cuenta fue cancelada',
-    mensaje: `Motivo: ${motivo}. No podrás crear otra cuenta con este DPI.`,
-  });
   return delay(data[idx]);
 }
 
@@ -144,12 +144,6 @@ export async function reactivarUsuario(
   };
   setUsuarios(data);
   registrarAuditoria({ comiteId, usuarioAfectadoId: usuarioId, tipo: 'reactivacion', motivo });
-  await crearNotificacion({
-    usuarioId,
-    tipo: 'advertencia_comite',
-    titulo: 'Tu cuenta fue reactivada',
-    mensaje: motivo,
-  });
   return delay(data[idx]);
 }
 
