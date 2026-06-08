@@ -18,8 +18,6 @@ import {
   type DatosListaPdf,
 } from '../../../utils/listaComprasPdf';
 
-const BACKEND_URL = 'http://localhost:3001/api';
-
 export interface GrupoCarrito {
   productorId: string;
   productorNombre: string;
@@ -97,7 +95,7 @@ export function useCarrito() {
       }
       return { acuerdo, canal, productorId, grupo: g, notas };
     },
-    onSuccess: ({ acuerdo, canal, grupo, notas }) => {
+    onSuccess: ({ acuerdo, canal, productorId, grupo, notas }) => {
       qc.invalidateQueries({ queryKey: ['carrito', usuario?.id] });
       qc.invalidateQueries({ queryKey: ['carrito:hidratado', usuario?.id] });
       qc.invalidateQueries({ queryKey: ['acuerdos'] });
@@ -111,7 +109,7 @@ export function useCarrito() {
         const tel = (grupo.productorTelefono ?? '502').replace(/\D/g, '');
         window.open(`https://wa.me/${tel}?text=${texto}`, '_blank');
       } else {
-        navigate(`/chat/${acuerdo.productorId}?acuerdo=${acuerdo.id}`);
+        navigate(`/chat/${productorId}?acuerdo=${acuerdo.id || ''}`);
       }
     },
     onError: (e: Error) => toast.error(e.message),
@@ -157,8 +155,6 @@ export function useCarrito() {
     },
   };
 }
-
-// ─── Helpers ───────────────────────────────────────────────────────
 
 function agruparPorProductor(items: ItemCarritoHidratado[]): GrupoCarrito[] {
   const map = new Map<string, GrupoCarrito>();
