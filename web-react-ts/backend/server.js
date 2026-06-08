@@ -22,7 +22,6 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
-// AUTH
 app.post('/api/auth/login', async (req, res) => {
   const { telefono } = req.body;
   try {
@@ -51,13 +50,10 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-// PRODUCTOS
 app.get('/api/productos', async (req, res) => {
   try {
     const connection = await pool.getConnection();
-    const [productos] = await connection.query(
-      'SELECT id, nombre, categoria, precio, stock, descripcion, user_id, precio_mayor, cantidad_mayor, unidad_medida, activo, created_at FROM productos'
-    );
+    const [productos] = await connection.query('SELECT * FROM productos');
     connection.release();
     res.json({ success: true, data: productos });
   } catch (error) {
@@ -128,7 +124,6 @@ app.delete('/api/productos/:id', async (req, res) => {
   }
 });
 
-// CARRITO
 app.get('/api/carrito/:userId', async (req, res) => {
   const { userId } = req.params;
   try {
@@ -185,7 +180,6 @@ app.delete('/api/carrito/:userId', async (req, res) => {
   }
 });
 
-// NOTIFICACIONES
 app.get('/api/notificaciones/:userId', async (req, res) => {
   const { userId } = req.params;
   try {
@@ -210,7 +204,6 @@ app.post('/api/notificaciones', async (req, res) => {
   }
 });
 
-// ACUERDOS
 app.get('/api/acuerdos', async (req, res) => {
   try {
     const connection = await pool.getConnection();
@@ -246,7 +239,6 @@ app.post('/api/acuerdos', async (req, res) => {
   }
 });
 
-// MENSAJES
 app.get('/api/mensajes', async (req, res) => {
   try {
     const connection = await pool.getConnection();
@@ -273,7 +265,6 @@ app.post('/api/mensajes', async (req, res) => {
   }
 });
 
-// USERS
 app.get('/api/users', async (req, res) => {
   try {
     const connection = await pool.getConnection();

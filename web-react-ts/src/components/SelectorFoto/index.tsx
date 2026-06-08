@@ -22,7 +22,7 @@ async function comprimirImagen(file: File): Promise<string> {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_SIZE = 400;
+        const MAX_SIZE = 250;
         let width = img.width;
         let height = img.height;
 
@@ -42,7 +42,7 @@ async function comprimirImagen(file: File): Promise<string> {
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         ctx?.drawImage(img, 0, 0, width, height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
         resolve(dataUrl);
       };
       img.onerror = reject;
