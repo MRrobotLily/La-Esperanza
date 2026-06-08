@@ -204,6 +204,7 @@ app.post('/api/notificaciones', async (req, res) => {
   }
 });
 
+// ACUERDOS
 app.get('/api/acuerdos', async (req, res) => {
   try {
     const connection = await pool.getConnection();
@@ -212,6 +213,22 @@ app.get('/api/acuerdos', async (req, res) => {
     res.json({ success: true, data: acuerdos });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.put('/api/acuerdos/:id', async (req, res) => {
+  const { id } = req.params;
+  const { estado } = req.body;
+  try {
+    const connection = await pool.getConnection();
+    await connection.query(
+      'UPDATE acuerdos SET estado = ? WHERE id = ?',
+      [estado, id]
+    );
+    connection.release();
+    res.json({ success: true });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
   }
 });
 
@@ -239,6 +256,7 @@ app.post('/api/acuerdos', async (req, res) => {
   }
 });
 
+// MENSAJES
 app.get('/api/mensajes', async (req, res) => {
   try {
     const connection = await pool.getConnection();

@@ -7,11 +7,6 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
-function uid(prefix = ''): string {
-  return `${prefix}${Date.now()}${Math.random().toString(36).slice(2, 8)}`;
-}
-
-// LISTAR ACUERDOS
 export async function listarAcuerdos(usuarioId: string, rol: Usuario['rol']): Promise<Acuerdo[]> {
   try {
     const response = await fetch(`${BACKEND_URL}/acuerdos`);
@@ -34,7 +29,6 @@ export async function listarAcuerdos(usuarioId: string, rol: Usuario['rol']): Pr
       actualizadoEn: a.created_at || nowIso(),
     }));
 
-    // Filtrar por rol
     if (rol === 'productor') {
       acuerdos = acuerdos.filter((a: any) => a.productorId === usuarioId);
     } else if (rol === 'comprador') {
@@ -48,7 +42,6 @@ export async function listarAcuerdos(usuarioId: string, rol: Usuario['rol']): Pr
   }
 }
 
-// OBTENER UN ACUERDO
 export async function obtenerAcuerdo(id: string): Promise<Acuerdo | null> {
   try {
     const response = await fetch(`${BACKEND_URL}/acuerdos`);
@@ -85,7 +78,6 @@ export interface CrearAcuerdoInput {
   canalContacto: 'chat' | 'whatsapp';
 }
 
-// CREAR ACUERDO en backend
 export async function crearAcuerdo(input: CrearAcuerdoInput): Promise<Acuerdo> {
   try {
     const itemsDetallados = await Promise.all(
@@ -138,15 +130,24 @@ export async function crearAcuerdo(input: CrearAcuerdoInput): Promise<Acuerdo> {
   }
 }
 
+async function actualizarEstado(id: string, estado: string): Promise<void> {
+  await fetch(`${BACKEND_URL}/acuerdos/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ estado })
+  });
+}
+
 export async function aceptarAcuerdo(
   id: string,
   entrega: { tipo: TipoEntrega; punto: string; fecha: string },
 ): Promise<Acuerdo> {
-  // TODO: implementar en backend
-  return { id, estado: 'aceptado' } as any;
+  await actualizarEstado(id, 'aceptado');
+  return { id, estado: 'aceptado', entrega } as any;
 }
 
 export async function rechazarAcuerdo(id: string, motivo: string): Promise<Acuerdo> {
+  await actualizarEstado(id, 'rechazado');
   return { id, estado: 'rechazado', motivoRechazo: motivo } as any;
 }
 
@@ -154,9 +155,11 @@ export async function confirmarEntrega(
   id: string,
   quien: 'comprador' | 'productor',
 ): Promise<Acuerdo> {
+  await actualizarEstado(id, 'finalizado');
   return { id, estado: 'finalizado' } as any;
 }
 
 export async function cancelarAcuerdo(id: string, motivo: string): Promise<Acuerdo> {
+  await actualizarEstado(id, 'cancelado');
   return { id, estado: 'cancelado' } as any;
 }
