@@ -11,18 +11,48 @@ interface Props {
   textoAccion?: string;
   textoReemplazar?: string;
   yaHayFoto?: boolean;
-  /** Si no se pasa, usa default de 3 MB */
   variante?: 'primary' | 'outline';
 }
 
-/**
- * Selector de foto con modal de opciones:
- *   - En móvil: "Tomar foto" (capture="environment") | "Subir desde galería"
- *   - En desktop: ambos botones abren el selector de archivo (desktop suele
- *     no tener cámara trasera, pero iOS/Android sí responden a `capture`).
- *
- * El prototipo guarda como dataURL (Base64) dentro de localStorage.
- */
+// Comprimir imagen a max 400x400 con calidad 0.7
+async function comprimirImagen(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 400;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height = (height * MAX_SIZE) / width;
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width = (width * MAX_SIZE) / height;
+            height = MAX_SIZE;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        resolve(dataUrl);
+      };
+      img.onerror = reject;
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function SelectorFoto({
   onFoto,
   onMultiples,
@@ -51,13 +81,14 @@ export default function SelectorFoto({
         setError(`Cada imagen debe pesar menos de ${maxMb} MB.`);
         return;
       }
-      const url = await new Promise<string>((resolve, reject) => {
-        const r = new FileReader();
-        r.onload = () => resolve(r.result as string);
-        r.onerror = () => reject(r.error);
-        r.readAsDataURL(file);
-      });
-      urls.push(url);
+      try {
+        // Comprimir cada imagen antes de guardarla
+        const url = await comprimirImagen(file);
+        urls.push(url);
+      } catch (err) {
+        setError('Error procesando la imagen.');
+        return;
+      }
     }
     if (onMultiples && urls.length > 1) {
       onMultiples(urls);
@@ -82,7 +113,6 @@ export default function SelectorFoto({
 
       {error && <p className="mt-1 text-xs font-medium text-danger">{error}</p>}
 
-      {/* Inputs ocultos: uno con capture (cámara) y otro sin (galería) */}
       <input
         ref={camaraRef}
         type="file"
@@ -133,7 +163,7 @@ export default function SelectorFoto({
             </div>
           </button>
           <p className="text-center text-[11px] text-ink-light">
-            Máx {maxMb} MB por imagen
+            Máx {maxMb} MB por imagen (se comprime automáticamente)
           </p>
         </div>
       </Modal>
