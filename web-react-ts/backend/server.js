@@ -18,7 +18,10 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
+// ==========================================
 // AUTH
+// ==========================================
+
 app.post('/api/auth/login', async (req, res) => {
   const { telefono } = req.body;
   try {
@@ -47,7 +50,10 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
+// ==========================================
 // PRODUCTOS
+// ==========================================
+
 app.get('/api/productos', async (req, res) => {
   try {
     const connection = await pool.getConnection();
@@ -122,7 +128,10 @@ app.delete('/api/productos/:id', async (req, res) => {
   }
 });
 
+// ==========================================
 // CARRITO
+// ==========================================
+
 app.get('/api/carrito/:userId', async (req, res) => {
   const { userId } = req.params;
   try {
@@ -179,7 +188,10 @@ app.delete('/api/carrito/:userId', async (req, res) => {
   }
 });
 
+// ==========================================
 // NOTIFICACIONES
+// ==========================================
+
 app.get('/api/notificaciones/:userId', async (req, res) => {
   const { userId } = req.params;
   try {
@@ -204,7 +216,79 @@ app.post('/api/notificaciones', async (req, res) => {
   }
 });
 
+// ==========================================
+// ACUERDOS
+// ==========================================
+
+app.get('/api/acuerdos', async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+    const [acuerdos] = await connection.query('SELECT * FROM acuerdos ORDER BY created_at DESC');
+    connection.release();
+    res.json({ success: true, data: acuerdos });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/acuerdos', async (req, res) => {
+  const { comprador_id, productor_id, items, canal_contacto } = req.body;
+  try {
+    const connection = await pool.getConnection();
+    const [result] = await connection.query(
+      'INSERT INTO acuerdos (comprador_id, productor_id, items, canal_contacto) VALUES (?, ?, ?, ?)',
+      [comprador_id, productor_id, JSON.stringify(items || []), canal_contacto]
+    );
+    connection.release();
+    res.json({ 
+      success: true, 
+      id: result.insertId.toString(),
+      compradorId: comprador_id.toString(),
+      productorId: productor_id.toString(),
+      items: items || [],
+      canalContacto: canal_contacto,
+      estado: 'pendiente',
+      creadoEn: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// ==========================================
+// MENSAJES
+// ==========================================
+
+app.get('/api/mensajes', async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+    const [mensajes] = await connection.query('SELECT * FROM mensajes ORDER BY created_at DESC');
+    connection.release();
+    res.json({ success: true, data: mensajes });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/mensajes', async (req, res) => {
+  const { remitente_id, destinatario_id, acuerdo_id, texto } = req.body;
+  try {
+    const connection = await pool.getConnection();
+    const [result] = await connection.query(
+      'INSERT INTO mensajes (remitente_id, destinatario_id, acuerdo_id, texto) VALUES (?, ?, ?, ?)',
+      [remitente_id, destinatario_id, acuerdo_id || null, texto]
+    );
+    connection.release();
+    res.json({ success: true, id: result.insertId });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// ==========================================
 // USERS
+// ==========================================
+
 app.get('/api/users', async (req, res) => {
   try {
     const connection = await pool.getConnection();
