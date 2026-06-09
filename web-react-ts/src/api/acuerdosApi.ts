@@ -7,6 +7,23 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
+function parseItems(items: any): any[] {
+  if (!items) return [];
+  if (Array.isArray(items)) return items;
+  if (typeof items === 'string') {
+    try {
+      return JSON.parse(items);
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function calcularTotal(items: any[]): number {
+  return items.reduce((s, i) => s + (Number(i.subtotal) || 0), 0);
+}
+
 export async function listarAcuerdos(usuarioId: string, rol: Usuario['rol']): Promise<Acuerdo[]> {
   try {
     const response = await fetch(`${BACKEND_URL}/acuerdos`);
@@ -15,24 +32,27 @@ export async function listarAcuerdos(usuarioId: string, rol: Usuario['rol']): Pr
     const data = await response.json();
     if (!data.success || !data.data) return [];
 
-    let acuerdos = data.data.map((a: any) => ({
-      id: a.id.toString(),
-      compradorId: a.comprador_id.toString(),
-      productorId: a.productor_id.toString(),
-      items: typeof a.items === 'string' ? JSON.parse(a.items) : (a.items || []),
-      total: (typeof a.items === 'string' ? JSON.parse(a.items) : (a.items || [])).reduce((s: number, i: any) => s + (i.subtotal || 0), 0),
-      estado: a.estado || 'pendiente',
-      confirmadoComprador: a.confirmado_comprador === 1 || a.confirmado_comprador === true,
-      confirmadoProductor: a.confirmado_productor === 1 || a.confirmado_productor === true,
-      canalContacto: a.canal_contacto || 'chat',
-      entrega: a.entrega_tipo ? {
-        tipo: a.entrega_tipo,
-        punto: a.entrega_punto || '',
-        fecha: a.entrega_fecha || '',
-      } : undefined,
-      creadoEn: a.created_at || nowIso(),
-      actualizadoEn: a.created_at || nowIso(),
-    }));
+    let acuerdos = data.data.map((a: any) => {
+      const items = parseItems(a.items);
+      return {
+        id: a.id.toString(),
+        compradorId: a.comprador_id.toString(),
+        productorId: a.productor_id.toString(),
+        items,
+        total: calcularTotal(items),
+        estado: a.estado || 'pendiente',
+        confirmadoComprador: a.confirmado_comprador === 1 || a.confirmado_comprador === true,
+        confirmadoProductor: a.confirmado_productor === 1 || a.confirmado_productor === true,
+        canalContacto: a.canal_contacto || 'chat',
+        entrega: a.entrega_tipo ? {
+          tipo: a.entrega_tipo,
+          punto: a.entrega_punto || '',
+          fecha: a.entrega_fecha || '',
+        } : undefined,
+        creadoEn: a.created_at || nowIso(),
+        actualizadoEn: a.created_at || nowIso(),
+      };
+    });
 
     if (rol === 'productor') {
       acuerdos = acuerdos.filter((a: any) => a.productorId === usuarioId);
@@ -58,12 +78,14 @@ export async function obtenerAcuerdo(id: string): Promise<Acuerdo | null> {
     const a = data.data.find((x: any) => x.id.toString() === id);
     if (!a) return null;
 
+    const items = parseItems(a.items);
+
     return {
       id: a.id.toString(),
       compradorId: a.comprador_id.toString(),
       productorId: a.productor_id.toString(),
-      items: typeof a.items === 'string' ? JSON.parse(a.items) : (a.items || []),
-      total: (typeof a.items === 'string' ? JSON.parse(a.items) : (a.items || [])).reduce((s: number, i: any) => s + (i.subtotal || 0), 0),
+      items,
+      total: calcularTotal(items),
       estado: a.estado || 'pendiente',
       confirmadoComprador: a.confirmado_comprador === 1 || a.confirmado_comprador === true,
       confirmadoProductor: a.confirmado_productor === 1 || a.confirmado_productor === true,
