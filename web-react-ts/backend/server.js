@@ -218,13 +218,50 @@ app.get('/api/acuerdos', async (req, res) => {
 
 app.put('/api/acuerdos/:id', async (req, res) => {
   const { id } = req.params;
-  const { estado } = req.body;
+  const { estado, confirmado_comprador, confirmado_productor } = req.body;
   try {
     const connection = await pool.getConnection();
-    await connection.query(
-      'UPDATE acuerdos SET estado = ? WHERE id = ?',
-      [estado, id]
-    );
+    
+    if (confirmado_comprador !== undefined || confirmado_productor !== undefined) {
+      if (confirmado_comprador !== undefined) {
+        await connection.query(
+          'UPDATE acuerdos SET confirmado_comprador = ? WHERE id = ?',
+          [confirmado_comprador ? 1 : 0, id]
+        );
+      }
+      if (confirmado_productor !== undefined) {
+        await connection.query(
+          'UPDATE acuerdos SET confirmado_productor = ? WHERE id = ?',
+          [confirmado_productor ? 1 : 0, id]
+        );
+      }
+      
+      const [rows] = await connection.query(
+        'SELECT confirmado_comprador, confirmado_productor FROM acuerdos WHERE id = ?',
+        [id]
+      );
+      
+      if (rows.length > 0) {
+        const a = rows[0];
+        if (a.confirmado_comprador && a.confirmado_productor) {
+          await connection.query(
+            'UPDATE acuerdos SET estado = ? WHERE id = ?',
+            ['finalizado', id]
+          );
+        } else {
+          await connection.query(
+            'UPDATE acuerdos SET estado = ? WHERE id = ?',
+            ['entregado', id]
+          );
+        }
+      }
+    } else if (estado) {
+      await connection.query(
+        'UPDATE acuerdos SET estado = ? WHERE id = ?',
+        [estado, id]
+      );
+    }
+    
     connection.release();
     res.json({ success: true });
   } catch (error) {
@@ -256,7 +293,6 @@ app.post('/api/acuerdos', async (req, res) => {
   }
 });
 
-// MENSAJES
 app.get('/api/mensajes', async (req, res) => {
   try {
     const connection = await pool.getConnection();

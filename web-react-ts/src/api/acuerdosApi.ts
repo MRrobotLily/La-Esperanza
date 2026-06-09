@@ -22,8 +22,8 @@ export async function listarAcuerdos(usuarioId: string, rol: Usuario['rol']): Pr
       items: typeof a.items === 'string' ? JSON.parse(a.items) : (a.items || []),
       total: 0,
       estado: a.estado || 'pendiente',
-      confirmadoComprador: false,
-      confirmadoProductor: false,
+      confirmadoComprador: a.confirmado_comprador === 1 || a.confirmado_comprador === true,
+      confirmadoProductor: a.confirmado_productor === 1 || a.confirmado_productor === true,
       canalContacto: a.canal_contacto || 'chat',
       creadoEn: a.created_at || nowIso(),
       actualizadoEn: a.created_at || nowIso(),
@@ -60,8 +60,8 @@ export async function obtenerAcuerdo(id: string): Promise<Acuerdo | null> {
       items: typeof a.items === 'string' ? JSON.parse(a.items) : (a.items || []),
       total: 0,
       estado: a.estado || 'pendiente',
-      confirmadoComprador: false,
-      confirmadoProductor: false,
+      confirmadoComprador: a.confirmado_comprador === 1 || a.confirmado_comprador === true,
+      confirmadoProductor: a.confirmado_productor === 1 || a.confirmado_productor === true,
       canalContacto: a.canal_contacto || 'chat',
       creadoEn: a.created_at || nowIso(),
       actualizadoEn: a.created_at || nowIso(),
@@ -155,8 +155,18 @@ export async function confirmarEntrega(
   id: string,
   quien: 'comprador' | 'productor',
 ): Promise<Acuerdo> {
-  await actualizarEstado(id, 'finalizado');
-  return { id, estado: 'finalizado' } as any;
+  const body = quien === 'comprador' 
+    ? { confirmado_comprador: true } 
+    : { confirmado_productor: true };
+  
+  await fetch(`${BACKEND_URL}/acuerdos/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  
+  const ac = await obtenerAcuerdo(id);
+  return ac || ({ id, estado: 'entregado' } as any);
 }
 
 export async function cancelarAcuerdo(id: string, motivo: string): Promise<Acuerdo> {
