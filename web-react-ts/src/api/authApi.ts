@@ -9,7 +9,6 @@ export function getUltimoCodigoSimulado(): { telefono: string; codigo: string } 
   return ultimoCodigoEmitido;
 }
 
-// Formatear teléfono: "55123456" → "5512-3456"
 function formatTelefono(telefono: string): string {
   if (telefono.length === 8 && /^\d{8}$/.test(telefono)) {
     return telefono.slice(0, 4) + '-' + telefono.slice(4);
@@ -20,7 +19,6 @@ function formatTelefono(telefono: string): string {
   return telefono;
 }
 
-// SMS
 export async function enviarCodigoSMS(telefono: string): Promise<{ codigo: string }> {
   const tel = formatTelefono(telefono);
   console.log(`📱 SMS para ${tel}: 123456`);
@@ -28,7 +26,6 @@ export async function enviarCodigoSMS(telefono: string): Promise<{ codigo: strin
   return { codigo: '123456' };
 }
 
-// VERIFICAR CÓDIGO
 export async function verificarCodigoSMS(
   telefono: string,
   codigoIngresado: string
@@ -36,7 +33,6 @@ export async function verificarCodigoSMS(
   return { valido: true };
 }
 
-// LOGIN
 export async function iniciarSesionConTelefono(
   telefono: string,
   codigoIngresado: string
@@ -83,7 +79,6 @@ export async function iniciarSesionConTelefono(
   }
 }
 
-// REGISTRAR
 export async function registrarUsuario(
   telefono: string,
   nombre: string,
@@ -163,6 +158,20 @@ export async function actualizarPerfil(
     if (!usuarioActual) {
       return { exito: false, error: 'No hay usuario' };
     }
+    
+    const response = await fetch(`${BACKEND_URL}/users/${usuarioId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre: datos.nombre,
+        apellido: datos.apellido,
+      })
+    });
+    
+    if (!response.ok) {
+      return { exito: false, error: 'Error al actualizar en servidor' };
+    }
+    
     guardarSesion({ ...usuarioActual, ...datos });
     return { exito: true };
   } catch (error) {

@@ -336,6 +336,22 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
+app.put('/api/users/:id', async (req, res) => {
+  const { id } = req.params;
+  const { nombre, apellido } = req.body;
+  try {
+    const connection = await pool.getConnection();
+    await connection.query(
+      'UPDATE users SET nombre = ?, apellido = ? WHERE id = ?',
+      [nombre, apellido, id]
+    );
+    connection.release();
+    res.json({ success: true });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
 app.get('/api/users/:id', async (req, res) => {
   const { id } = req.params;
   try {
