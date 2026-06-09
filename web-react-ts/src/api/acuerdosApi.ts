@@ -25,6 +25,11 @@ export async function listarAcuerdos(usuarioId: string, rol: Usuario['rol']): Pr
       confirmadoComprador: a.confirmado_comprador === 1 || a.confirmado_comprador === true,
       confirmadoProductor: a.confirmado_productor === 1 || a.confirmado_productor === true,
       canalContacto: a.canal_contacto || 'chat',
+      entrega: a.entrega_tipo ? {
+        tipo: a.entrega_tipo,
+        punto: a.entrega_punto || '',
+        fecha: a.entrega_fecha || '',
+      } : undefined,
       creadoEn: a.created_at || nowIso(),
       actualizadoEn: a.created_at || nowIso(),
     }));
@@ -63,6 +68,11 @@ export async function obtenerAcuerdo(id: string): Promise<Acuerdo | null> {
       confirmadoComprador: a.confirmado_comprador === 1 || a.confirmado_comprador === true,
       confirmadoProductor: a.confirmado_productor === 1 || a.confirmado_productor === true,
       canalContacto: a.canal_contacto || 'chat',
+      entrega: a.entrega_tipo ? {
+        tipo: a.entrega_tipo,
+        punto: a.entrega_punto || '',
+        fecha: a.entrega_fecha || '',
+      } : undefined,
       creadoEn: a.created_at || nowIso(),
       actualizadoEn: a.created_at || nowIso(),
     };
@@ -142,7 +152,16 @@ export async function aceptarAcuerdo(
   id: string,
   entrega: { tipo: TipoEntrega; punto: string; fecha: string },
 ): Promise<Acuerdo> {
-  await actualizarEstado(id, 'aceptado');
+  await fetch(`${BACKEND_URL}/acuerdos/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      estado: 'aceptado',
+      entrega_tipo: entrega.tipo,
+      entrega_punto: entrega.punto,
+      entrega_fecha: entrega.fecha,
+    })
+  });
   return { id, estado: 'aceptado', entrega } as any;
 }
 

@@ -204,7 +204,6 @@ app.post('/api/notificaciones', async (req, res) => {
   }
 });
 
-// ACUERDOS
 app.get('/api/acuerdos', async (req, res) => {
   try {
     const connection = await pool.getConnection();
@@ -218,7 +217,7 @@ app.get('/api/acuerdos', async (req, res) => {
 
 app.put('/api/acuerdos/:id', async (req, res) => {
   const { id } = req.params;
-  const { estado, confirmado_comprador, confirmado_productor } = req.body;
+  const { estado, confirmado_comprador, confirmado_productor, entrega_tipo, entrega_punto, entrega_fecha } = req.body;
   try {
     const connection = await pool.getConnection();
     
@@ -256,10 +255,17 @@ app.put('/api/acuerdos/:id', async (req, res) => {
         }
       }
     } else if (estado) {
-      await connection.query(
-        'UPDATE acuerdos SET estado = ? WHERE id = ?',
-        [estado, id]
-      );
+      if (entrega_tipo && entrega_punto && entrega_fecha) {
+        await connection.query(
+          'UPDATE acuerdos SET estado = ?, entrega_tipo = ?, entrega_punto = ?, entrega_fecha = ? WHERE id = ?',
+          [estado, entrega_tipo, entrega_punto, entrega_fecha, id]
+        );
+      } else {
+        await connection.query(
+          'UPDATE acuerdos SET estado = ? WHERE id = ?',
+          [estado, id]
+        );
+      }
     }
     
     connection.release();
