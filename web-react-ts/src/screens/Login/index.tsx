@@ -115,6 +115,36 @@ export default function Login() {
             </button>
           </div>
         )}
+
+        {state.paso === 'telefono' && (
+          <div className="mt-7 border-t border-line pt-5">
+            <p className="mb-3 text-center text-[11px] uppercase tracking-widest text-ink-light">
+              Selecciona tu perfil
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { emoji: '🧑‍🌾', label: 'Productor' },
+                { emoji: '🛒', label: 'Comprador' },
+                { emoji: '🏛️', label: 'Comité' },
+              ].map((d) => (
+                <button
+                  key={d.label}
+                  type="button"
+                  className="flex flex-col items-center gap-1 rounded-xl border border-line bg-bg-alt py-2 text-xs font-medium text-ink-muted transition-all hover:border-primary hover:bg-primary-soft/40"
+                  onClick={() => {
+                    // Solo informativo, no hace nada automático
+                  }}
+                >
+                  <span className="text-xl">{d.emoji}</span>
+                  {d.label}
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 text-center text-[10px] text-ink-light">
+              Ingresa tu teléfono arriba para iniciar sesión
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
