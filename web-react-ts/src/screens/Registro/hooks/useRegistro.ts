@@ -61,15 +61,8 @@ export function useRegistro() {
   const verificar = useMutation({
     mutationFn: async () => {
       const r = await verificarCodigoSMS(telefonoFull, codigo);
-      if (!r.ok) {
-        if (r.motivo === 'bloqueado')
-          throw new Error('Bloqueado por 5 min tras 3 intentos fallidos.');
-        if (r.motivo === 'expirado') throw new Error('Código expirado. Solicita uno nuevo.');
-        throw new Error(
-          r.restantes !== undefined
-            ? `Código incorrecto. Te quedan ${r.restantes} intentos.`
-            : 'Código incorrecto.',
-        );
+      if (!r.valido) {
+        throw new Error(r.error || 'Código incorrecto.');
       }
     },
     onSuccess: () => setPaso('dpi'),
@@ -84,14 +77,9 @@ export function useRegistro() {
       if (dpi.length !== 13) throw new Error('El DPI debe tener 13 dígitos.');
       if (!dpiFoto) throw new Error('Debes capturar la foto del DPI.');
       const r = await validarDPI(dpi);
-      if (r.estado === 'cancelada')
-        throw new Error(
-          'Este DPI tiene una cuenta cancelada permanentemente. No puede crear una nueva cuenta.',
-        );
-      if (r.estado === 'suspendida')
-        throw new Error('Este DPI tiene una cuenta suspendida. Contacta al comité.');
-      if (r.estado === 'activa')
-        throw new Error('Ya existe una cuenta activa con este DPI.');
+      if (!r.valido) {
+        throw new Error(r.error || 'DPI inválido.');
+      }
     },
     onSuccess: () => setPaso('perfil'),
     onError: (e: Error) => {
@@ -102,14 +90,18 @@ export function useRegistro() {
 
   const finalizar = useMutation({
     mutationFn: async (datos: PerfilRegistroInput) => {
-      const u = await registrarUsuario({
-        telefono: telefonoFull,
-        dpi,
-        dpiFotoUrl: dpiFoto!,
-        ...datos,
-      });
-      iniciarSesion(u);
-      return u;
+      const result = await registrarUsuario(
+        telefonoFull,
+        datos.nombre,
+        datos.apellido,
+        datos.rol,
+        dpi
+      );
+      if (!result.usuario) {
+        throw new Error(result.error || 'Error al registrar');
+      }
+      iniciarSesion(result.usuario);
+      return result.usuario;
     },
     onSuccess: (u) => {
       toast.success(`¡Cuenta creada! Bienvenido, ${u.nombre}.`);
