@@ -46,7 +46,10 @@ export function useRegistro() {
     },
   });
 
-  const telefonoFull = `+502${telefono}`;
+  // Formato del backend: "1234-5678"
+  const telefonoFull = telefono.length === 8 
+    ? telefono.slice(0, 4) + '-' + telefono.slice(4)
+    : telefono;
 
   const enviar = useMutation({
     mutationFn: () => enviarCodigoSMS(telefonoFull),
