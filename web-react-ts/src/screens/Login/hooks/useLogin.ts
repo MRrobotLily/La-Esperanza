@@ -9,10 +9,12 @@ import {
 } from '../../../api/authApi';
 import { useAuth } from '../../../providers/AuthProvider/useAuth';
 
-export type Paso = 'telefono' | 'codigo';
+export type Paso = 'rol' | 'telefono' | 'codigo';
+export type RolSeleccionado = 'productor' | 'comprador' | 'comite' | null;
 
 export function useLogin() {
-  const [paso, setPaso] = useState<Paso>('telefono');
+  const [paso, setPaso] = useState<Paso>('rol');
+  const [rolSeleccionado, setRolSeleccionado] = useState<RolSeleccionado>(null);
   const [telefono, setTelefono] = useState('');
   const [codigo, setCodigo] = useState('');
   const [errorCodigo, setErrorCodigo] = useState<string | undefined>();
@@ -35,17 +37,24 @@ export function useLogin() {
   const verificar = useMutation({
     mutationFn: async () => {
       const { valido, error } = await verificarCodigoSMS(telefono, codigo);
-      
       if (!valido) {
         throw new Error(error || 'Código incorrecto');
       }
-
       const result = await iniciarSesionConTelefono(telefono, codigo);
-      
       if (!result.usuario) {
-        throw new Error(result.error || 'Error al iniciar sesión');
+        throw new Error(result.error || 'No existe una cuenta con este número');
       }
-
+      
+      // Validar que el rol coincide con el seleccionado
+      if (rolSeleccionado && result.usuario.rol !== rolSeleccionado) {
+        const labels: Record<string, string> = {
+          productor: 'Productor',
+          comprador: 'Comprador',
+          comite: 'Comité'
+        };
+        throw new Error(`No hay una cuenta de ${labels[rolSeleccionado]} con ese número. ¿Desea crear una?`);
+      }
+      
       return result.usuario;
     },
     onSuccess: (usuario) => {
@@ -59,6 +68,11 @@ export function useLogin() {
       toast.error(mensaje);
     },
   });
+
+  const seleccionarRol = (rol: 'productor' | 'comprador' | 'comite') => {
+    setRolSeleccionado(rol);
+    setPaso('telefono');
+  };
 
   const enviarCodigo = () => {
     if (!telefono || telefono.length < 8) {
@@ -81,9 +95,14 @@ export function useLogin() {
   };
 
   const volverPaso = () => {
-    setPaso('telefono');
-    setErrorCodigo(undefined);
-    setCodigo('');
+    if (paso === 'codigo') {
+      setPaso('telefono');
+      setErrorCodigo(undefined);
+      setCodigo('');
+    } else if (paso === 'telefono') {
+      setPaso('rol');
+      setTelefono('');
+    }
   };
 
   return {
@@ -93,10 +112,12 @@ export function useLogin() {
       codigo,
       codigoDemo,
       errorCodigo,
+      rolSeleccionado,
     },
     handler: {
       setTelefono,
       setCodigo,
+      seleccionarRol,
       enviarCodigo,
       reenviarCodigo,
       verificar: verificarCodigo,

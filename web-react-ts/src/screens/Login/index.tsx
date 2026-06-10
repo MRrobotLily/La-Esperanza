@@ -11,6 +11,16 @@ export default function Login() {
   if (cargando) return null;
   if (usuario) return <Navigate to="/" replace />;
 
+  const labels: Record<string, string> = {
+    productor: 'Productor',
+    comprador: 'Comprador',
+    comite: 'Comité'
+  };
+
+  const titulo = state.rolSeleccionado 
+    ? `Bienvenido ${labels[state.rolSeleccionado]}` 
+    : 'La Esperanza';
+
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-primary-dark via-primary to-primary-light p-4">
       <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/5" />
@@ -22,14 +32,55 @@ export default function Login() {
           <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-light shadow-soft">
             <span className="text-3xl">🌿</span>
           </div>
-          <h1 className="font-display text-2xl font-semibold text-primary-dark">La Esperanza</h1>
+          <h1 className="font-display text-2xl font-semibold text-primary-dark">{titulo}</h1>
           <p className="text-sm text-ink-muted">Sistema de productos agrícolas</p>
         </div>
 
+        {state.paso === 'rol' && (
+          <div className="flex flex-col gap-4">
+            <p className="text-center text-sm font-semibold text-ink">
+              Selecciona tu tipo de cuenta
+            </p>
+            <div className="grid grid-cols-1 gap-3">
+              {[
+                { rol: 'productor' as const, emoji: '🧑‍🌾', label: 'Productor', desc: 'Vendo mis productos agrícolas' },
+                { rol: 'comprador' as const, emoji: '🛒', label: 'Comprador', desc: 'Compro productos frescos' },
+                { rol: 'comite' as const, emoji: '🏛️', label: 'Comité', desc: 'Administro la plataforma' },
+              ].map((d) => (
+                <button
+                  key={d.rol}
+                  type="button"
+                  onClick={() => handler.seleccionarRol(d.rol)}
+                  className="flex items-center gap-3 rounded-2xl border-2 border-line bg-bg-alt p-4 text-left transition-all hover:border-primary hover:bg-primary-soft/30"
+                >
+                  <span className="text-3xl">{d.emoji}</span>
+                  <div>
+                    <p className="font-semibold text-ink">{d.label}</p>
+                    <p className="text-xs text-ink-muted">{d.desc}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <p className="text-center text-xs text-ink-muted">
+              ¿Primera vez aquí?{' '}
+              <Link to="/registro" className="font-semibold text-primary">
+                Regístrate
+              </Link>
+            </p>
+          </div>
+        )}
+
         {state.paso === 'telefono' && (
           <div className="flex flex-col gap-4">
+            <button
+              type="button"
+              onClick={handler.volverPaso}
+              className="inline-flex items-center gap-1 self-start text-sm font-medium text-primary"
+            >
+              ← Cambiar perfil
+            </button>
             <label className="text-sm font-semibold text-ink">
-              📱 Número de teléfono
+              📱 Ingresa tu número de teléfono
             </label>
             <div className="flex gap-2">
               <div className="flex items-center rounded-xl border border-line bg-bg-alt px-3 text-sm font-semibold text-ink-muted">
@@ -113,36 +164,6 @@ export default function Login() {
               ¿No recibiste el código?{' '}
               <span className="font-semibold text-primary">Reenviar</span>
             </button>
-          </div>
-        )}
-
-        {state.paso === 'telefono' && (
-          <div className="mt-7 border-t border-line pt-5">
-            <p className="mb-3 text-center text-[11px] uppercase tracking-widest text-ink-light">
-              Selecciona tu perfil
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { emoji: '🧑‍🌾', label: 'Productor' },
-                { emoji: '🛒', label: 'Comprador' },
-                { emoji: '🏛️', label: 'Comité' },
-              ].map((d) => (
-                <button
-                  key={d.label}
-                  type="button"
-                  className="flex flex-col items-center gap-1 rounded-xl border border-line bg-bg-alt py-2 text-xs font-medium text-ink-muted transition-all hover:border-primary hover:bg-primary-soft/40"
-                  onClick={() => {
-                    // Solo informativo, no hace nada automático
-                  }}
-                >
-                  <span className="text-xl">{d.emoji}</span>
-                  {d.label}
-                </button>
-              ))}
-            </div>
-            <p className="mt-2 text-center text-[10px] text-ink-light">
-              Ingresa tu teléfono arriba para iniciar sesión
-            </p>
           </div>
         )}
       </div>
