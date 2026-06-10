@@ -163,6 +163,8 @@ export async function actualizarPerfil(
       return { exito: false, error: 'No hay usuario' };
     }
     
+    console.log('🐛 Actualizando perfil con datos:', datos);
+    
     const response = await fetch(`${BACKEND_URL}/users/${usuarioId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
