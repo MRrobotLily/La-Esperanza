@@ -64,8 +64,12 @@ export async function iniciarSesionConTelefono(
         rol: data.user.rol,
         dpi: '',
         estado: 'activo',
+        direccion: data.user.direccion || '',
+        departamento: data.user.departamento || '',
+        municipio: data.user.municipio || '',
+        fotoPerfil: data.user.foto_perfil || undefined,
         creadoEn: data.user.created_at || nowIso(),
-      };
+      } as any;
 
       writeSesionLocal('usuarioActual', usuario);
       console.log('✅ Login exitoso');
@@ -165,6 +169,10 @@ export async function actualizarPerfil(
       body: JSON.stringify({
         nombre: datos.nombre,
         apellido: datos.apellido,
+        direccion: datos.direccion,
+        departamento: datos.departamento,
+        municipio: datos.municipio,
+        foto_perfil: (datos as any).fotoPerfil,
       })
     });
     

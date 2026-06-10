@@ -338,12 +338,12 @@ app.get('/api/users', async (req, res) => {
 
 app.put('/api/users/:id', async (req, res) => {
   const { id } = req.params;
-  const { nombre, apellido } = req.body;
+  const { nombre, apellido, direccion, departamento, municipio, foto_perfil } = req.body;
   try {
     const connection = await pool.getConnection();
     await connection.query(
-      'UPDATE users SET nombre = ?, apellido = ? WHERE id = ?',
-      [nombre, apellido, id]
+      'UPDATE users SET nombre = ?, apellido = ?, direccion = ?, departamento = ?, municipio = ?, foto_perfil = ? WHERE id = ?',
+      [nombre, apellido, direccion || '', departamento || '', municipio || '', foto_perfil || null, id]
     );
     connection.release();
     res.json({ success: true });
