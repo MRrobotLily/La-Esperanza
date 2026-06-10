@@ -325,6 +325,33 @@ app.post('/api/mensajes', async (req, res) => {
   }
 });
 
+// CALIFICACIONES
+app.get('/api/calificaciones', async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+    const [data] = await connection.query('SELECT * FROM calificaciones ORDER BY created_at DESC');
+    connection.release();
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/calificaciones', async (req, res) => {
+  const { acuerdo_id, emisor_id, receptor_id, estrellas, comentario, direccion } = req.body;
+  try {
+    const connection = await pool.getConnection();
+    const [result] = await connection.query(
+      'INSERT INTO calificaciones (acuerdo_id, emisor_id, receptor_id, estrellas, comentario, direccion) VALUES (?, ?, ?, ?, ?, ?)',
+      [acuerdo_id, emisor_id, receptor_id, estrellas, comentario || '', direccion]
+    );
+    connection.release();
+    res.json({ success: true, id: result.insertId });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
 app.get('/api/users', async (req, res) => {
   try {
     const connection = await pool.getConnection();
