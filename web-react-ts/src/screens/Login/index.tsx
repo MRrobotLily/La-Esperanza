@@ -13,7 +13,6 @@ export default function Login() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-primary-dark via-primary to-primary-light p-4">
-      {/* círculos decorativos */}
       <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/5" />
       <div className="absolute -bottom-32 -left-16 h-96 w-96 rounded-full bg-white/[0.03]" />
       <div className="absolute left-10 top-40 h-24 w-24 rounded-full bg-accent/10" />
@@ -116,32 +115,6 @@ export default function Login() {
             </button>
           </div>
         )}
-
-        <div className="mt-7 border-t border-line pt-5">
-          <p className="mb-3 text-center text-[11px] uppercase tracking-widest text-ink-light">
-            Ingreso demo
-          </p>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { tel: '55500001', emoji: '🧑‍🌾', label: 'Productor' },
-              { tel: '55500003', emoji: '🛒', label: 'Comprador' },
-              { tel: '55500004', emoji: '🏛️', label: 'Comité' },
-            ].map((d) => (
-              <button
-                key={d.tel}
-                type="button"
-                className="flex flex-col items-center gap-1 rounded-xl border border-line bg-bg-alt py-2 text-xs font-medium text-ink-muted transition-all hover:border-primary hover:bg-primary-soft/40"
-                onClick={() => {
-                  handler.setTelefono(d.tel);
-                  setTimeout(() => handler.enviarCodigo(), 60);
-                }}
-              >
-                <span className="text-xl">{d.emoji}</span>
-                {d.label}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );
