@@ -62,7 +62,7 @@ export async function iniciarSesionConTelefono(
         nombre: data.user.nombre,
         apellido: data.user.apellido,
         rol: data.user.rol,
-        dpi: '',
+        dpi: data.user.dpi || '',
         estado: 'activo',
         direccion: data.user.direccion || '',
         departamento: data.user.departamento || '',
@@ -143,13 +143,38 @@ export async function cerrarSesionLS(): Promise<void> {
   removeSesionLocal('usuarioActual');
 }
 
-export function validarDPI(dpi: string): { valido: boolean; error?: string } {
+export async function validarDPI(dpi: string): Promise<{ valido: boolean; error?: string }> {
   if (!dpi || dpi.length !== 13) {
     return { valido: false, error: 'DPI debe tener 13 dígitos' };
   }
   if (!/^\d{13}$/.test(dpi)) {
     return { valido: false, error: 'DPI solo números' };
   }
+  
+  // Verificar si ya existe un usuario con este DPI
+  try {
+    const response = await fetch(`${BACKEND_URL}/users`);
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success && data.data) {
+        const existe = data.data.find((u: any) => u.dpi === dpi);
+        if (existe) {
+          const labels: Record<string, string> = {
+            productor: 'Productor',
+            comprador: 'Comprador',
+            comite: 'Comité'
+          };
+          return { 
+            valido: false, 
+            error: `Ya existe una cuenta de ${labels[existe.rol] || existe.rol} con este DPI.` 
+          };
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error verificando DPI:', error);
+  }
+  
   return { valido: true };
 }
 

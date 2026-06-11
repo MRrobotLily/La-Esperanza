@@ -36,12 +36,12 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 app.post('/api/auth/register', async (req, res) => {
-  const { telefono, nombre, apellido, rol } = req.body;
+  const { telefono, nombre, apellido, rol, dpi } = req.body;
   try {
     const connection = await pool.getConnection();
     const [result] = await connection.query(
-      'INSERT INTO users (telefono, nombre, apellido, rol) VALUES (?, ?, ?, ?)',
-      [telefono, nombre, apellido, rol || 'comprador']
+      'INSERT INTO users (telefono, nombre, apellido, rol, dpi) VALUES (?, ?, ?, ?, ?)',
+      [telefono, nombre, apellido, rol || 'comprador', dpi || null]
     );
     connection.release();
     res.json({ success: true, userId: result.insertId, telefono, nombre, apellido, rol: rol || 'comprador' });
@@ -325,7 +325,6 @@ app.post('/api/mensajes', async (req, res) => {
   }
 });
 
-// CALIFICACIONES
 app.get('/api/calificaciones', async (req, res) => {
   try {
     const connection = await pool.getConnection();
