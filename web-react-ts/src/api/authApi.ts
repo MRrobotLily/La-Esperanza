@@ -88,7 +88,10 @@ export async function registrarUsuario(
   nombre: string,
   apellido: string,
   rol: Rol,
-  dpi: string
+  dpi: string,
+  direccion?: string,
+  departamento?: string,
+  municipio?: string
 ): Promise<{ usuario: Usuario | null; error?: string }> {
   try {
     const telFormato = formatTelefono(telefono);
@@ -96,7 +99,7 @@ export async function registrarUsuario(
     const response = await fetch(`${BACKEND_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ telefono: telFormato, nombre, apellido, rol, dpi })
+      body: JSON.stringify({ telefono: telFormato, nombre, apellido, rol, dpi, direccion, departamento, municipio })
     });
 
     if (!response.ok) {
@@ -114,8 +117,11 @@ export async function registrarUsuario(
         rol: data.rol,
         dpi: dpi,
         estado: 'activo',
+        direccion: direccion || '',
+        departamento: departamento || '',
+        municipio: municipio || '',
         creadoEn: nowIso(),
-      };
+      } as any;
 
       writeSesionLocal('usuarioActual', usuario);
       return { usuario };
@@ -151,7 +157,6 @@ export async function validarDPI(dpi: string): Promise<{ valido: boolean; error?
     return { valido: false, error: 'DPI solo números' };
   }
   
-  // Verificar si ya existe un usuario con este DPI
   try {
     const response = await fetch(`${BACKEND_URL}/users`);
     if (response.ok) {

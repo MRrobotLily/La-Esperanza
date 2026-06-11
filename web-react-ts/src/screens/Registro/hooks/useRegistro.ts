@@ -46,7 +46,6 @@ export function useRegistro() {
     },
   });
 
-  // Formato del backend: "1234-5678"
   const telefonoFull = telefono.length === 8 
     ? telefono.slice(0, 4) + '-' + telefono.slice(4)
     : telefono;
@@ -98,7 +97,10 @@ export function useRegistro() {
         datos.nombre,
         datos.apellido,
         datos.rol,
-        dpi
+        dpi,
+        datos.direccion,
+        datos.departamento,
+        datos.municipio
       );
       if (!result.usuario) {
         throw new Error(result.error || 'Error al registrar');
